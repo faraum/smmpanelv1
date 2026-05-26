@@ -83,7 +83,9 @@ export default function AdminPage() {
         <div className="w-full max-w-sm">
           <div className="flex items-center justify-center gap-2 mb-8">
             <Lock className="h-5 w-5 text-purple-400" />
-            <h1 className="text-xl font-bold text-white">Painel Admin</h1>
+            <h1 className="text-xl font-bold text-white">
+              <span style={{ color: '#8B5CF6' }}>Hype</span>fy — Painel Admin
+            </h1>
           </div>
           <form onSubmit={handleLogin} className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-4">
             <div>

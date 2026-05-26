@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       const amount = pkg?.priceBRL ?? 17.90
 
       const { generateQRCode } = await import('@/lib/pix')
-      const fakePixCode = `00020126580014BR.GOV.BCB.PIX0136preview-pix-code-exemplo-${orderId.slice(-6)}5204000053039865406${amount.toFixed(2).replace('.', '')}5802BR5913PULSE SMM6008SAOPAULO6207050300016304FAKE`
+      const fakePixCode = `00020126580014BR.GOV.BCB.PIX0136preview-pix-code-exemplo-${orderId.slice(-6)}5204000053039865406${amount.toFixed(2).replace('.', '')}5802BR5906HYPEFY6008SAOPAULO6207050300016304FAKE`
       const pixQrCode = await generateQRCode(fakePixCode)
 
       return NextResponse.json({

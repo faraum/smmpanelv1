@@ -19,13 +19,13 @@ export function generatePixCode(amount: number, description: string): string {
     '5303986',                                    // Transaction Currency (BRL)
     `5406${amountFormatted.replace('.', '')}`,    // Transaction Amount
     '5802BR',                                     // Country Code
-    '5913Pulse SMM Panel',                        // Merchant Name
+    '5906Hypefy',                                 // Merchant Name
     '6009SAO PAULO',                              // Merchant City
     `62070503${description.slice(0, 3)}`,         // Additional Data
     '6304',                                       // CRC placeholder
   ].join('')
 
-  return `00020126580014BR.GOV.BCB.PIX0136${pixKey}5204000053039865406${amountFormatted.replace('.', '').padStart(6, '0')}5802BR5913Pulse SMM5009Sao Paulo62070503${Date.now().toString().slice(-3)}6304ABCD`
+  return `00020126580014BR.GOV.BCB.PIX0136${pixKey}5204000053039865406${amountFormatted.replace('.', '').padStart(6, '0')}5802BR5906Hypefy5009Sao Paulo62070503${Date.now().toString().slice(-3)}6304ABCD`
 }
 
 /**

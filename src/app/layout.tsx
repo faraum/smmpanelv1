@@ -4,13 +4,13 @@ import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Pulse SMM'
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
 
 export const metadata: Metadata = {
-  title: `${siteName} — Comprar Seguidores e Curtidas Instagram`,
+  title: 'Hypefy — Comprar Seguidores e Curtidas Instagram',
   description:
-    'Compre seguidores, curtidas, visualizações e comentários para o Instagram com entrega rápida, segura e automática. Pagamento via PIX.',
-  keywords: 'comprar seguidores instagram, curtidas instagram, visualizações reels, comentários instagram',
+    'Compre seguidores, curtidas, visualizações e comentários para Instagram. Entrega rápida e automática. Pagamento via PIX. Crie o hype que você merece!',
+  keywords: 'comprar seguidores instagram, comprar curtidas, seguidores brasileiros, curtidas brasileiras, visualizações reels, hypefy',
 }
 
 export default function RootLayout({

@@ -14,7 +14,7 @@ export default function Home() {
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null)
 
   const isPreview = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
-  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Pulse SMM'
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
 
   const categoryIconComponents: Record<string, React.ReactNode> = {
     'seguidores-mundiais':     <Users className="h-3.5 w-3.5" />,
@@ -46,7 +46,7 @@ export default function Home() {
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-purple-500/20 bg-purple-500/5 px-4 py-1.5 text-sm text-purple-300">
               <Zap className="h-3.5 w-3.5 fill-purple-400 text-purple-400" />
-              Entrega automática e instantânea
+              ⚡ Entrega automática e instantânea
             </div>
 
             <h1 className="mb-4 text-4xl font-black leading-[1.1] text-white sm:text-5xl lg:text-6xl">
@@ -62,8 +62,12 @@ export default function Home() {
               Instagram
             </h1>
 
-            <p className="mb-8 text-base text-gray-400 max-w-xl mx-auto sm:text-lg">
+            <p className="mb-4 text-base text-gray-400 max-w-xl mx-auto sm:text-lg">
               Entrega rápida, segura e 100% automática. Pagamento via PIX. Sem senha, sem risco.
+            </p>
+
+            <p className="mb-8 text-sm font-medium" style={{ color: '#8B5CF6' }}>
+              Crie o hype que você merece
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -157,12 +161,15 @@ export default function Home() {
         {/* Footer */}
         <footer className="border-t border-white/5 py-8 px-4">
           <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-gray-400">
+            <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-purple-400" />
-              <span className="text-sm">{siteName} © {new Date().getFullYear()}</span>
+              <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.5px' }}>
+                <span style={{ color: '#8B5CF6' }}>Hype</span>
+                <span style={{ color: '#ffffff' }}>fy</span>
+              </span>
             </div>
             <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span>Todos os direitos reservados</span>
+              <span>© 2025 Hypefy. Todos os direitos reservados.</span>
               {process.env.NEXT_PUBLIC_WHATSAPP && (
                 <>
                   <span>·</span>
