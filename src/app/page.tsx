@@ -6,7 +6,8 @@ import CategorySection from '@/components/CategorySection'
 import CategoryCard from '@/components/CategoryCard'
 import UsernameModal from '@/components/UsernameModal'
 import FAQ from '@/components/FAQ'
-import PreviewBanner from '@/components/PreviewBanner'
+import TestimonialVideos from '@/components/TestimonialVideos'
+import CTASection from '@/components/CTASection'
 import { Package, instagramSubCategories, tiktokSubCategories, getPackagesBySlug } from '@/data/packages'
 import { Shield, Zap, Clock, Star } from 'lucide-react'
 
@@ -71,7 +72,6 @@ export default function Home() {
   return (
     <>
       <Header />
-      {isPreview && <PreviewBanner />}
 
       <main className="min-h-screen">
         {/* Hero */}
@@ -231,6 +231,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Testimonial Videos */}
+        <TestimonialVideos />
+
         {/* Features */}
         <section className="border-t border-white/5 py-16 px-4">
           <div className="mx-auto max-w-6xl">
@@ -263,6 +266,9 @@ export default function Home() {
         <div id="faq" className="px-4">
           <FAQ />
         </div>
+
+        {/* CTA */}
+        <CTASection />
 
         {/* Footer */}
         <footer className="border-t border-white/5 py-8 px-4">

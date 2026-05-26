@@ -35,44 +35,18 @@ type Phase = 'bump' | 'payment'
 
 // ─── Order bump data ─────────────────────────────────────────────────────────
 
-const bumpOffers: Record<string, BumpOffer[]> = {
-  seguidores: [
-    { id: 'b-seg-100',   name: '+100 Seguidores',   quantity: 100,   price: 4.90,  discount: '50% OFF' },
-    { id: 'b-seg-500',   name: '+500 Seguidores',   quantity: 500,   price: 12.90, discount: '50% OFF' },
-    { id: 'b-seg-700',   name: '+700 Seguidores',   quantity: 700,   price: 14.90, discount: '50% OFF' },
-  ],
-  curtidas: [
-    { id: 'b-cur-100',   name: '100 Curtidas',      quantity: 100,   price: 4.90,  discount: '50% OFF' },
-    { id: 'b-cur-500',   name: '500 Curtidas',      quantity: 500,   price: 8.90,  discount: '50% OFF' },
-    { id: 'b-cur-1000',  name: '1.000 Curtidas',    quantity: 1000,  price: 9.90,  discount: '50% OFF' },
-  ],
-  visualizacoes: [
-    { id: 'b-vis-1000',  name: '1.000 Views',       quantity: 1000,  price: 4.90,  discount: '50% OFF' },
-    { id: 'b-vis-5000',  name: '5.000 Views',       quantity: 5000,  price: 8.90,  discount: '50% OFF' },
-    { id: 'b-vis-10000', name: '10.000 Views',      quantity: 10000, price: 9.90,  discount: '50% OFF' },
-  ],
-  comentarios: [
-    { id: 'b-com-5',     name: '5 Comentários',     quantity: 5,     price: 5.90,  discount: '50% OFF' },
-    { id: 'b-com-10',    name: '10 Comentários',    quantity: 10,    price: 9.90,  discount: '50% OFF' },
-    { id: 'b-com-20',    name: '20 Comentários',    quantity: 20,    price: 14.90, discount: '50% OFF' },
-  ],
-}
-
-const categoryMeta: Record<string, { label: string; icon: string }> = {
-  seguidores:    { label: 'Seguidores',         icon: '👥' },
-  curtidas:      { label: 'Curtidas',           icon: '❤️' },
-  visualizacoes: { label: 'Visualizações Reels', icon: '▶️' },
-  comentarios:   { label: 'Comentários',        icon: '💬' },
-}
-
-const ALL_CATS = ['seguidores', 'curtidas', 'visualizacoes', 'comentarios']
+const seguidoresBumps: BumpOffer[] = [
+  { id: 'b-seg-100',  name: '+100 Seguidores',   quantity: 100,  price: 4.90,  discount: '50% OFF' },
+  { id: 'b-seg-500',  name: '+500 Seguidores',   quantity: 500,  price: 12.90, discount: '50% OFF' },
+  { id: 'b-seg-1000', name: '+1.000 Seguidores', quantity: 1000, price: 19.90, discount: '50% OFF' },
+]
 
 function getCategoryKey(categorySlug: string): string {
   if (categorySlug.startsWith('seguidores')) return 'seguidores'
   if (categorySlug.startsWith('curtidas'))   return 'curtidas'
   if (categorySlug.startsWith('visualizacoes')) return 'visualizacoes'
   if (categorySlug.startsWith('comentarios'))  return 'comentarios'
-  return 'seguidores'
+  return 'outros'
 }
 
 function formatTime(s: number): string {
@@ -112,7 +86,6 @@ export default function CheckoutClient({
 
   // ── Derived
   const purchasedCat = getCategoryKey(categorySlug)
-  const orderedCats = [purchasedCat, ...ALL_CATS.filter((c) => c !== purchasedCat)]
   const bumpTotal = added.reduce((s, i) => s + i.price, 0)
   const total = priceBRL + bumpTotal
 
@@ -358,7 +331,7 @@ export default function CheckoutClient({
         <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-3">Seu pedido</p>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-lg">
-            {categoryMeta[purchasedCat]?.icon ?? '⭐'}
+            {purchasedCat === 'seguidores' ? '👥' : purchasedCat === 'curtidas' ? '❤️' : purchasedCat === 'visualizacoes' ? '▶️' : purchasedCat === 'comentarios' ? '💬' : '⭐'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-white truncate">{serviceName}</p>
@@ -379,59 +352,49 @@ export default function CheckoutClient({
           <p className="text-xs text-white/80 mt-0.5">Turbine seu perfil antes de pagar — desconto de 50%</p>
         </div>
 
-        {/* Category sections */}
-        <div className="bg-[#0f0f1a] divide-y divide-white/5">
-          {orderedCats.map((cat) => {
-            const meta = categoryMeta[cat]
-            const offers = bumpOffers[cat]
-            if (!meta || !offers) return null
-            return (
-              <div key={cat} className="p-4">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
-                  {meta.icon} {meta.label}
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {offers.map((offer) => {
-                    const alreadyAdded = isAdded(offer.id)
-                    return (
-                      <div
-                        key={offer.id}
-                        className={`relative flex flex-col rounded-xl border p-2.5 transition-all ${
-                          alreadyAdded
-                            ? 'border-emerald-500/40 bg-emerald-500/5'
-                            : 'border-white/8 bg-white/5 hover:border-white/15'
-                        }`}
-                      >
-                        {/* 50% OFF badge */}
-                        <span className="mb-1.5 self-start rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
-                          {offer.discount}
-                        </span>
-                        {/* Name */}
-                        <p className="text-[11px] font-semibold text-white leading-tight mb-1">
-                          {offer.name}
-                        </p>
-                        {/* Price */}
-                        <p className="text-xs font-bold mb-2" style={{ color: '#10B981' }}>
-                          {formatBRL(offer.price)}
-                        </p>
-                        {/* Button */}
-                        <button
-                          onClick={() => alreadyAdded ? removeOffer(offer.id) : addOffer(offer)}
-                          className={`w-full rounded-lg py-1.5 text-[11px] font-bold transition-all active:scale-95 ${
-                            alreadyAdded
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-emerald-500 text-white hover:bg-emerald-400'
-                          }`}
-                        >
-                          {alreadyAdded ? 'Adicionado ✓' : 'Adicionar'}
-                        </button>
-                      </div>
-                    )
-                  })}
+        {/* Seguidores extras — usa o mesmo @ informado */}
+        <div className="bg-[#0f0f1a] p-4">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            👥 Seguidores Extras
+          </p>
+          <p className="text-[10px] text-gray-500 mb-3">
+            Entregues no mesmo perfil: <span className="text-purple-300 font-medium">{instagramUser}</span>
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {seguidoresBumps.map((offer) => {
+              const alreadyAdded = isAdded(offer.id)
+              return (
+                <div
+                  key={offer.id}
+                  className={`relative flex flex-col rounded-xl border p-2.5 transition-all ${
+                    alreadyAdded
+                      ? 'border-emerald-500/40 bg-emerald-500/5'
+                      : 'border-white/8 bg-white/5 hover:border-white/15'
+                  }`}
+                >
+                  <span className="mb-1.5 self-start rounded-md bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                    {offer.discount}
+                  </span>
+                  <p className="text-[11px] font-semibold text-white leading-tight mb-1">
+                    {offer.name}
+                  </p>
+                  <p className="text-xs font-bold mb-2" style={{ color: '#10B981' }}>
+                    {formatBRL(offer.price)}
+                  </p>
+                  <button
+                    onClick={() => alreadyAdded ? removeOffer(offer.id) : addOffer(offer)}
+                    className={`w-full rounded-lg py-1.5 text-[11px] font-bold transition-all active:scale-95 ${
+                      alreadyAdded
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-emerald-500 text-white hover:bg-emerald-400'
+                    }`}
+                  >
+                    {alreadyAdded ? 'Adicionado ✓' : 'Adicionar'}
+                  </button>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </div>
 

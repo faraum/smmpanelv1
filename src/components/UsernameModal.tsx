@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Package } from '@/data/packages'
 import { formatBRL, formatQuantity, validateSocialInput } from '@/lib/utils'
-import { X, AtSign, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-react'
+import { X, AtSign, Link as LinkIcon, Loader2, AlertCircle, Mail } from 'lucide-react'
 
 interface UsernameModalProps {
   pkg: Package | null
@@ -23,14 +23,18 @@ function getTypeIcon(slug: string): string {
 export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
   const router = useRouter()
   const [input, setInput] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (pkg) {
       setInput('')
+      setEmail('')
       setError('')
+      setEmailError('')
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [pkg])
@@ -74,6 +78,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setEmailError('')
 
     const validation = validateSocialInput(input, pkg.platform ?? 'instagram')
     if (!validation.valid) {
@@ -85,13 +90,18 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
       return
     }
 
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setEmailError('Informe um email válido para receber a confirmação do pedido')
+      return
+    }
+
     setLoading(true)
 
     try {
       const res = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, instagramInput: input }),
+        body: JSON.stringify({ packageId: pkg.id, instagramInput: input, email: email.trim() }),
       })
 
       const data = await res.json()
@@ -195,6 +205,35 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
             )}
           </div>
 
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <span className="flex items-center gap-1.5">
+                <Mail className="h-4 w-4 text-purple-400" />
+                Email para confirmação
+              </span>
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailError('') }}
+              placeholder="seu@email.com"
+              disabled={loading}
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
+            />
+            <p className="mt-1.5 text-xs text-gray-500">
+              Enviaremos a confirmação do pedido para este email
+            </p>
+            {emailError && (
+              <div className="mt-2 flex items-start gap-1.5 text-red-400 text-xs">
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                <span>{emailError}</span>
+              </div>
+            )}
+          </div>
+
           {/* Security note */}
           <div className="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3 text-xs text-blue-300">
             🔒 Não pedimos senha. Perfil deve estar <strong>público</strong> para receber {isTikTok ? 'seguidores' : 'seguidores'}.
@@ -203,7 +242,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || !email.trim()}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 hover:from-purple-400 hover:to-purple-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

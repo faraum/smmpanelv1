@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import Header from '@/components/Header'
-import PreviewBanner from '@/components/PreviewBanner'
 import CheckoutClient from './CheckoutClient'
 import { isPreviewMode, parsePreviewOrderId } from '@/lib/config'
 import { getPackageById } from '@/data/packages'
@@ -86,7 +85,6 @@ export default async function CheckoutPage({ params }: Props) {
   return (
     <>
       <Header />
-      {isPreview && <PreviewBanner />}
 
       <main className="min-h-screen pt-24 pb-16 px-4">
         <div className="mx-auto max-w-lg">
