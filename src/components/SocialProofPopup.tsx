@@ -74,8 +74,8 @@ export default function SocialProofPopup() {
 
   return (
     <div
-      className={`fixed bottom-6 left-4 z-50 w-[calc(100vw-2rem)] max-w-[320px] transition-all duration-300 ease-out ${
-        entering ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+      className={`fixed top-16 left-4 z-30 w-[calc(100vw-2rem)] max-w-[300px] transition-all duration-300 ease-out ${
+        entering ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
       }`}
       role="status"
       aria-live="polite"

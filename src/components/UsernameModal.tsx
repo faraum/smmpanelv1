@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Package } from '@/data/packages'
-import { formatBRL, formatQuantity, validateInstagramInput } from '@/lib/utils'
+import { formatBRL, formatQuantity, validateSocialInput } from '@/lib/utils'
 import { X, AtSign, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-react'
 
 interface UsernameModalProps {
@@ -12,10 +12,11 @@ interface UsernameModalProps {
 }
 
 function getTypeIcon(slug: string): string {
-  if (slug.startsWith('seguidores')) return '👥'
-  if (slug.startsWith('curtidas')) return '❤️'
-  if (slug.startsWith('visualizacoes')) return '▶️'
-  if (slug.startsWith('comentarios')) return '💬'
+  if (slug.includes('seguidores')) return '👥'
+  if (slug.includes('curtidas')) return '❤️'
+  if (slug.includes('visualizacoes') || slug.includes('views')) return '▶️'
+  if (slug.includes('comentarios')) return '💬'
+  if (slug.includes('stories')) return '👁️'
   return '⭐'
 }
 
@@ -47,17 +48,39 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
   if (!pkg) return null
 
   const isPost = pkg.inputType === 'post'
+  const isTikTok = pkg.platform === 'tiktok'
+  const platformLabel = isTikTok ? 'TikTok' : 'Instagram'
+
+  const getPlaceholder = () => {
+    if (isPost) {
+      return isTikTok
+        ? 'https://www.tiktok.com/@usuario/video/...'
+        : 'https://www.instagram.com/p/...'
+    }
+    return '@seu_usuario'
+  }
+
+  const getInputHint = () => {
+    if (isPost) {
+      return isTikTok
+        ? 'Cole o link do vídeo TikTok que deseja impulsionar'
+        : 'Cole o link do post ou reel que deseja impulsionar'
+    }
+    return isTikTok
+      ? 'Informe o @ ou link completo do perfil TikTok'
+      : 'Informe o @ ou o link completo do perfil'
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    const validation = validateInstagramInput(input)
+    const validation = validateSocialInput(input, pkg.platform ?? 'instagram')
     if (!validation.valid) {
       setError(
         isPost
-          ? 'Cole o link direto do post, reel ou story do Instagram'
-          : 'Informe o @ do usuário ou o link do perfil'
+          ? `Cole o link direto do ${isTikTok ? 'vídeo TikTok' : 'post, reel ou story do Instagram'}`
+          : `Informe o @ do usuário ou o link do perfil ${platformLabel}`
       )
       return
     }
@@ -139,12 +162,12 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
               {isPost ? (
                 <span className="flex items-center gap-1.5">
                   <LinkIcon className="h-4 w-4 text-purple-400" />
-                  Link do post ou reel
+                  Link do {isTikTok ? 'vídeo TikTok' : 'post ou reel'}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
                   <AtSign className="h-4 w-4 text-purple-400" />
-                  Perfil do Instagram
+                  Perfil do {platformLabel}
                 </span>
               )}
             </label>
@@ -154,7 +177,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
               type="text"
               value={input}
               onChange={(e) => { setInput(e.target.value); setError('') }}
-              placeholder={isPost ? 'https://www.instagram.com/p/...' : '@seu_usuario'}
+              placeholder={getPlaceholder()}
               disabled={loading}
               autoCapitalize="none"
               autoCorrect="off"
@@ -162,11 +185,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
             />
 
-            <p className="mt-1.5 text-xs text-gray-500">
-              {isPost
-                ? 'Cole o link do post ou reel que deseja impulsionar'
-                : 'Informe o @ ou o link completo do perfil'}
-            </p>
+            <p className="mt-1.5 text-xs text-gray-500">{getInputHint()}</p>
 
             {error && (
               <div className="mt-2 flex items-start gap-1.5 text-red-400 text-xs">
@@ -178,7 +197,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
 
           {/* Security note */}
           <div className="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3 text-xs text-blue-300">
-            🔒 Não pedimos senha. Perfil deve estar <strong>público</strong> para receber seguidores.
+            🔒 Não pedimos senha. Perfil deve estar <strong>público</strong> para receber {isTikTok ? 'seguidores' : 'seguidores'}.
           </div>
 
           {/* Submit */}

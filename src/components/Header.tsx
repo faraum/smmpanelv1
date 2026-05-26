@@ -2,10 +2,25 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, Zap } from 'lucide-react'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handlePlatformNav = (platform: 'instagram' | 'tiktok') => {
+    setMenuOpen(false)
+    window.dispatchEvent(new CustomEvent('hypefy:platform', { detail: platform }))
+    if (pathname !== '/') {
+      router.push('/')
+    }
+    setTimeout(() => {
+      document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })
+    }, 150)
+  }
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -23,12 +38,28 @@ export default function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/#instagram"
-              className="text-sm text-gray-400 hover:text-white transition-colors"
+            <button
+              onClick={() => handlePlatformNav('instagram')}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
             >
+              {/* Instagram icon */}
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-[1.75]" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
               Instagram
-            </Link>
+            </button>
+            <button
+              onClick={() => handlePlatformNav('tiktok')}
+              className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              {/* TikTok icon */}
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.19 8.19 0 004.84 1.56V6.79a4.85 4.85 0 01-1.07-.1z" />
+              </svg>
+              TikTok
+            </button>
             <Link
               href="/#faq"
               className="text-sm text-gray-400 hover:text-white transition-colors"
@@ -58,13 +89,26 @@ export default function Header() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-white/5 bg-black/90 px-4 py-4 space-y-3">
-          <Link
-            href="/#instagram"
-            className="block text-sm text-gray-400 hover:text-white"
-            onClick={() => setMenuOpen(false)}
+          <button
+            onClick={() => handlePlatformNav('instagram')}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white w-full"
           >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.75]" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+            </svg>
             Instagram
-          </Link>
+          </button>
+          <button
+            onClick={() => handlePlatformNav('tiktok')}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-white w-full"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.19 8.19 0 004.84 1.56V6.79a4.85 4.85 0 01-1.07-.1z" />
+            </svg>
+            TikTok
+          </button>
           <Link
             href="/#faq"
             className="block text-sm text-gray-400 hover:text-white"

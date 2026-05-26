@@ -56,3 +56,39 @@ export function validateInstagramInput(input: string): {
 
   return { valid: false, link: '', user: '' }
 }
+
+/**
+ * Valida input social — Instagram ou TikTok
+ * Retorna: { valid, link, user }
+ */
+export function validateSocialInput(
+  input: string,
+  platform: 'instagram' | 'tiktok' = 'instagram'
+): { valid: boolean; link: string; user: string } {
+  if (platform === 'tiktok') {
+    const trimmed = input.trim()
+
+    // TikTok URL (perfil ou vídeo)
+    const ttUrlPattern = /^https?:\/\/(www\.)?tiktok\.com\/@([\w.]+)(\/video\/\d+)?/i
+    const ttUrlMatch = trimmed.match(ttUrlPattern)
+    if (ttUrlMatch) {
+      return { valid: true, link: trimmed, user: `@${ttUrlMatch[2]}` }
+    }
+
+    // @ de usuário (com ou sem o @)
+    const atPattern = /^@?([\w.]{1,24})$/
+    const atMatch = trimmed.match(atPattern)
+    if (atMatch) {
+      const username = atMatch[1]
+      return {
+        valid: true,
+        link: `https://www.tiktok.com/@${username}`,
+        user: `@${username}`,
+      }
+    }
+
+    return { valid: false, link: '', user: '' }
+  }
+
+  return validateInstagramInput(input)
+}

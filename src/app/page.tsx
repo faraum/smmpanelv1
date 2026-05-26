@@ -3,15 +3,20 @@
 import { useState, useEffect, useRef } from 'react'
 import Header from '@/components/Header'
 import CategorySection from '@/components/CategorySection'
+import CategoryCard from '@/components/CategoryCard'
 import UsernameModal from '@/components/UsernameModal'
 import FAQ from '@/components/FAQ'
 import PreviewBanner from '@/components/PreviewBanner'
-import { Package, categories, getPackagesBySlug } from '@/data/packages'
-import { Shield, Zap, Clock, Star, Users, Heart, Eye, MessageCircle } from 'lucide-react'
+import { Package, instagramSubCategories, tiktokSubCategories, getPackagesBySlug } from '@/data/packages'
+import { Shield, Zap, Clock, Star } from 'lucide-react'
 
 export default function Home() {
-  const [activeSlug, setActiveSlug] = useState(categories[0].slug)
+  const [platform, setPlatform] = useState<'instagram' | 'tiktok'>('instagram')
+  const [activeSlug, setActiveSlug] = useState(instagramSubCategories[0].slug)
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null)
+
+  const servicesRef = useRef<HTMLElement>(null)
+  const packagesRef = useRef<HTMLDivElement>(null)
 
   const isPreview = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
@@ -29,22 +34,43 @@ export default function Home() {
     return () => clearTimeout(orderTimerRef.current)
   }, [])
 
-  const categoryIconComponents: Record<string, React.ReactNode> = {
-    'seguidores-mundiais':     <Users className="h-3.5 w-3.5" />,
-    'seguidores-brasileiros':  <Users className="h-3.5 w-3.5" />,
-    'curtidas-mundiais':       <Heart className="h-3.5 w-3.5" />,
-    'curtidas-brasileiras':    <Heart className="h-3.5 w-3.5" />,
-    'visualizacoes-reels':     <Eye className="h-3.5 w-3.5" />,
-    'comentarios-brasileiros': <MessageCircle className="h-3.5 w-3.5" />,
+  // Listen for platform change events from header
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<'instagram' | 'tiktok'>).detail
+      setPlatform(detail)
+      const cats = detail === 'tiktok' ? tiktokSubCategories : instagramSubCategories
+      setActiveSlug(cats[0].slug)
+      setTimeout(() => {
+        servicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+    }
+    window.addEventListener('hypefy:platform', handler)
+    return () => window.removeEventListener('hypefy:platform', handler)
+  }, [])
+
+  const currentCategories = platform === 'tiktok' ? tiktokSubCategories : instagramSubCategories
+  const currentPackages = getPackagesBySlug(activeSlug)
+  const activeCategory = currentCategories.find((c) => c.slug === activeSlug)
+
+  const handlePlatformSwitch = (p: 'instagram' | 'tiktok') => {
+    setPlatform(p)
+    const cats = p === 'tiktok' ? tiktokSubCategories : instagramSubCategories
+    setActiveSlug(cats[0].slug)
   }
 
-  const currentPackages = getPackagesBySlug(activeSlug)
-  const activeCategory = categories.find((c) => c.slug === activeSlug)
+  const handleCategoryCardClick = (slug: string) => {
+    setActiveSlug(slug)
+    setTimeout(() => {
+      packagesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+  }
+
+  const isTikTok = platform === 'tiktok'
 
   return (
     <>
       <Header />
-
       {isPreview && <PreviewBanner />}
 
       <main className="min-h-screen">
@@ -70,9 +96,11 @@ export default function Home() {
               &{' '}
               <span className="bg-gradient-to-r from-purple-400 via-purple-300 to-purple-500 bg-clip-text text-transparent">
                 Curtidas
-              </span>{' '}
+              </span>
               <br className="hidden sm:block" />
-              Instagram
+              <span className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-300 mt-1 block">
+                Instagram & TikTok
+              </span>
             </h1>
 
             <p className="mb-4 text-base text-gray-400 max-w-xl mx-auto sm:text-lg">
@@ -114,18 +142,72 @@ export default function Home() {
         </section>
 
         {/* Services */}
-        <section id="instagram" className="px-4 pb-20">
+        <section id="services" ref={servicesRef} className="px-4 pb-20">
           <div className="mx-auto max-w-7xl">
-            {/* Category tabs — horizontal scroll on mobile */}
-            <div className="mb-8 -mx-4 px-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {categories.map((cat) => (
+
+            {/* Platform Toggle */}
+            <div className="flex justify-center mb-10">
+              <div className="inline-flex rounded-2xl border border-white/10 bg-white/5 p-1 gap-1">
+                <button
+                  onClick={() => handlePlatformSwitch('instagram')}
+                  className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 ${
+                    !isTikTok
+                      ? 'bg-gradient-to-r from-purple-500 to-purple-700 text-white shadow-lg shadow-purple-500/20'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.75]" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+                  </svg>
+                  Instagram
+                </button>
+                <button
+                  onClick={() => handlePlatformSwitch('tiktok')}
+                  className={`flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 ${
+                    isTikTok
+                      ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-lg shadow-pink-500/20'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.19 8.19 0 004.84 1.56V6.79a4.85 4.85 0 01-1.07-.1z" />
+                  </svg>
+                  TikTok
+                </button>
+              </div>
+            </div>
+
+            {/* Category Cards — horizontal scroll on mobile, grid on desktop */}
+            <div className="mb-10 -mx-4 px-4 flex gap-3 overflow-x-auto pb-3 no-scrollbar sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
+              {currentCategories.map((cat, i) => {
+                const pkgs = getPackagesBySlug(cat.slug)
+                return (
+                  <CategoryCard
+                    key={cat.slug}
+                    category={cat}
+                    packages={pkgs}
+                    featured={i === 0}
+                    active={activeSlug === cat.slug}
+                    onClick={() => handleCategoryCardClick(cat.slug)}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Sub-category tabs */}
+            <div ref={packagesRef} className="mb-6 -mx-4 px-4 flex gap-2 overflow-x-auto pb-1 no-scrollbar sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible">
+              {currentCategories.map((cat) => (
                 <button
                   key={cat.slug}
                   onClick={() => setActiveSlug(cat.slug)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`flex-shrink-0 flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
                     activeSlug === cat.slug
-                      ? 'bg-gradient-to-r from-purple-500 to-purple-700 text-white shadow-lg shadow-purple-500/20'
-                      : 'border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+                      ? isTikTok
+                        ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white border-transparent shadow-lg shadow-pink-500/20'
+                        : 'bg-gradient-to-r from-purple-500 to-purple-700 text-white border-transparent shadow-lg shadow-purple-500/20'
+                      : 'border-white/15 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/25'
                   }`}
                 >
                   <span className="text-base leading-none">{cat.icon}</span>
@@ -178,7 +260,7 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="px-4">
+        <div id="faq" className="px-4">
           <FAQ />
         </div>
 
