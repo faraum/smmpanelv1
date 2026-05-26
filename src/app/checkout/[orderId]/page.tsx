@@ -6,7 +6,6 @@ import PreviewBanner from '@/components/PreviewBanner'
 import CheckoutClient from './CheckoutClient'
 import { isPreviewMode, parsePreviewOrderId } from '@/lib/config'
 import { getPackageById } from '@/data/packages'
-import { formatBRL, formatQuantity } from '@/lib/utils'
 
 interface Props {
   params: Promise<{ orderId: string }>
@@ -21,6 +20,7 @@ interface OrderSummary {
   priceBRL: number
   pixCode: string
   pixQrCode: string
+  categorySlug: string
 }
 
 async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
@@ -30,12 +30,13 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
     const pkg = parsed ? getPackageById(parsed.packageId) : null
 
     return {
-      serviceName: pkg ? pkg.name : 'Serviço de Exemplo',
+      serviceName: pkg ? pkg.name : 'Seguidores Mundiais',
       quantity: pkg?.quantity ?? 1000,
       instagramUser: '@usuario_exemplo',
       priceBRL: pkg?.priceBRL ?? 17.90,
-      pixCode: '', // gerado pelo client
-      pixQrCode: '', // gerado pelo client
+      pixCode: '',
+      pixQrCode: '',
+      categorySlug: pkg?.categorySlug ?? 'seguidores-mundiais',
     }
   }
 
@@ -56,6 +57,7 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
       priceBRL: o.priceBRL,
       pixCode: o.pixCode || '',
       pixQrCode: o.pixQrCode || '',
+      categorySlug: o.categorySlug || 'seguidores-mundiais',
     }
   } catch {
     return null
@@ -72,12 +74,13 @@ export default async function CheckoutPage({ params }: Props) {
   }
 
   const summary = order ?? {
-    serviceName: 'Serviço',
+    serviceName: 'Seguidores Mundiais',
     quantity: 1000,
-    instagramUser: '@usuario',
+    instagramUser: '@usuario_exemplo',
     priceBRL: 17.90,
     pixCode: '',
     pixQrCode: '',
+    categorySlug: 'seguidores-mundiais',
   }
 
   return (
@@ -95,42 +98,17 @@ export default async function CheckoutPage({ params }: Props) {
             Voltar à loja
           </Link>
 
-          <h1 className="text-2xl font-bold text-white mb-1">Pagamento via PIX</h1>
-          <p className="text-gray-400 text-sm mb-6">Escaneie o QR Code ou copie o código PIX</p>
-
-          {/* Order summary */}
-          <div className="mb-5 rounded-2xl border border-white/5 bg-white/5 p-4">
-            <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-3">Resumo do pedido</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Serviço</span>
-                <span className="text-white font-medium">{summary.serviceName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Quantidade</span>
-                <span className="text-white font-medium">{formatQuantity(summary.quantity)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Para</span>
-                <span className="text-white font-medium">{summary.instagramUser}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/5 pt-2 mt-1">
-                <span className="text-gray-300 font-medium">Total</span>
-                <span className="text-white font-bold text-base">{formatBRL(summary.priceBRL)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* PIX + simulate button (client) */}
-          <div className="rounded-2xl border border-white/5 bg-white/5 p-5">
-            <CheckoutClient
-              orderId={orderId}
-              priceBRL={summary.priceBRL}
-              initialPixCode={summary.pixCode}
-              initialPixQrCode={summary.pixQrCode}
-              isPreview={isPreview}
-            />
-          </div>
+          <CheckoutClient
+            orderId={orderId}
+            priceBRL={summary.priceBRL}
+            initialPixCode={summary.pixCode}
+            initialPixQrCode={summary.pixQrCode}
+            isPreview={isPreview}
+            serviceName={summary.serviceName}
+            quantity={summary.quantity}
+            instagramUser={summary.instagramUser}
+            categorySlug={summary.categorySlug}
+          />
         </div>
       </main>
     </>

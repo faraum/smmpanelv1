@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Header from '@/components/Header'
 import CategorySection from '@/components/CategorySection'
 import UsernameModal from '@/components/UsernameModal'
@@ -15,6 +15,19 @@ export default function Home() {
 
   const isPreview = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
+
+  const [orderCount, setOrderCount] = useState(190432)
+  const orderTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  useEffect(() => {
+    const schedule = () => {
+      orderTimerRef.current = setTimeout(() => {
+        setOrderCount((c) => c + 1)
+        schedule()
+      }, 20000 + Math.random() * 20000)
+    }
+    schedule()
+    return () => clearTimeout(orderTimerRef.current)
+  }, [])
 
   const categoryIconComponents: Record<string, React.ReactNode> = {
     'seguidores-mundiais':     <Users className="h-3.5 w-3.5" />,
@@ -85,6 +98,17 @@ export default function Home() {
                   {badge.text}
                 </div>
               ))}
+            </div>
+
+            {/* Order counter */}
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <span className="text-base">🔥</span>
+              <span className="text-sm text-gray-400">
+                <span className="font-semibold text-white">
+                  +{orderCount.toLocaleString('pt-BR')}
+                </span>{' '}
+                pedidos entregues com sucesso
+              </span>
             </div>
           </div>
         </section>

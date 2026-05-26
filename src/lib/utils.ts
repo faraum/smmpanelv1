@@ -9,6 +9,13 @@ export function formatBRL(value: number): string {
 }
 
 /**
+ * Formata número com separadores pt-BR (ex: 1.000, 10.000, 1.000.000)
+ */
+export function formatNumber(n: number): string {
+  return n.toLocaleString('pt-BR')
+}
+
+/**
  * Formata quantidade com abreviações (K, M)
  */
 export function formatQuantity(qty: number): string {
