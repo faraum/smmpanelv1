@@ -14,7 +14,7 @@ export default function CTASection() {
     <section className="px-4 py-12">
       <div
         className="mx-auto max-w-3xl rounded-2xl px-8 py-16 text-center"
-        style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)' }}
+        style={{ background: 'linear-gradient(135deg, #6D28D9, #BE185D)' }}
       >
         <h2 className="text-3xl font-black text-white mb-4 leading-tight">
           Pronto para viralizar? 🚀
@@ -29,7 +29,7 @@ export default function CTASection() {
         <button
           onClick={scrollToPackages}
           className="inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 text-base font-bold transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{ color: '#8B5CF6', boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
+          style={{ color: '#6D28D9', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}
         >
           🚀 Comprar agora
         </button>

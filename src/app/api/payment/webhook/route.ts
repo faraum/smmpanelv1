@@ -1,62 +1,84 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { isPreviewMode } from '@/lib/config'
 
-/**
- * Webhook de confirmação de pagamento PIX.
- * Em produção com gateway real, este endpoint receberá a notificação de pagamento.
- * Cada gateway tem seu próprio formato — adaptar conforme necessário.
- */
 export async function POST(req: NextRequest) {
-  // Ignorar em modo preview
-  if (isPreviewMode) {
-    return NextResponse.json({ success: true, message: 'Webhook ignorado (modo preview)' })
-  }
-
   try {
-    const body = await req.json()
-    // TODO: Verificar assinatura/autenticidade do webhook do gateway
-    const { orderId } = body
+    const rawBody = await req.text()
+    const signature = req.headers.get('x-webhook-signature')
+    const webhookSecret = process.env.ACTIVEPAYMENTS_WEBHOOK_SECRET
 
-    if (!orderId) {
-      return NextResponse.json({ success: false, error: 'orderId é obrigatório' }, { status: 400 })
+    // Verify HMAC signature if webhook secret is configured
+    if (webhookSecret && signature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex')
+
+      if (signature !== expectedSignature) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      }
     }
 
-    const { connectDB } = await import('@/lib/mongodb')
-    const { default: Order } = await import('@/lib/models/Order')
-    const { getBulkFollowsClient } = await import('@/lib/bulkfollows')
+    const payload = JSON.parse(rawBody)
+    const { event, data } = payload
 
-    await connectDB()
-    const order = await Order.findOne({ orderId })
+    if (event === 'charge.paid') {
+      const { chargeId, externalReference } = data
+      const orderId = externalReference
 
-    if (!order) {
-      return NextResponse.json({ success: false, error: 'Pedido não encontrado' }, { status: 404 })
+      console.log(`[Webhook] Pagamento confirmado! ChargeId: ${chargeId}, OrderId: ${orderId}`)
+
+      if (!orderId) {
+        return NextResponse.json({ received: true })
+      }
+
+      // Update order and trigger BulkFollows
+      try {
+        const { connectDB } = await import('@/lib/mongodb')
+        const { default: Order } = await import('@/lib/models/Order')
+        const { getBulkFollowsClient } = await import('@/lib/bulkfollows')
+
+        await connectDB()
+        const order = await Order.findOne({ orderId })
+
+        if (!order || order.status !== 'PENDING_PAYMENT') {
+          return NextResponse.json({ received: true })
+        }
+
+        order.status = 'PAID'
+        order.paidAt = new Date()
+        ;(order as any).chargeId = chargeId
+        await order.save()
+
+        try {
+          const client = getBulkFollowsClient()
+          const bulkResult = await client.createOrder(
+            order.serviceId,
+            order.instagramLink,
+            order.quantity
+          )
+          order.bulkOrderId = bulkResult.order
+          order.status = 'PROCESSING'
+          await order.save()
+        } catch (bulkError) {
+          console.error(`[Webhook] Erro BulkFollows para ${orderId}:`, bulkError)
+        }
+      } catch (dbError) {
+        console.error(`[Webhook] Erro DB para ${orderId}:`, dbError)
+      }
     }
 
-    if (order.status !== 'PENDING_PAYMENT') {
-      return NextResponse.json({ success: true, message: 'Pedido já processado' })
+    if (event === 'charge.expired') {
+      console.log(`[Webhook] PIX expirado: ${data.chargeId}`)
     }
 
-    order.status = 'PAID'
-    order.paidAt = new Date()
-    await order.save()
-
-    try {
-      const client = getBulkFollowsClient()
-      const bulkResult = await client.createOrder(
-        order.serviceId,
-        order.instagramLink,
-        order.quantity
-      )
-      order.bulkOrderId = bulkResult.order
-      order.status = 'PROCESSING'
-      await order.save()
-    } catch (bulkError) {
-      console.error(`Erro ao criar pedido na BulkFollows para ${orderId}:`, bulkError)
+    if (event === 'charge.cancelled') {
+      console.log(`[Webhook] Cobrança cancelada: ${data.chargeId}`)
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Erro no webhook:', error)
-    return NextResponse.json({ success: false, error: 'Erro interno' }, { status: 500 })
+    console.error('[Webhook] Erro:', error)
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 })
   }
 }

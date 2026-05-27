@@ -23,11 +23,14 @@ export default function Home() {
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
 
   const [orderCount, setOrderCount] = useState(190432)
+  const [orderPulse, setOrderPulse] = useState(false)
   const orderTimerRef = useRef<ReturnType<typeof setTimeout>>()
   useEffect(() => {
     const schedule = () => {
       orderTimerRef.current = setTimeout(() => {
         setOrderCount((c) => c + 1)
+        setOrderPulse(true)
+        setTimeout(() => setOrderPulse(false), 400)
         schedule()
       }, 20000 + Math.random() * 20000)
     }
@@ -132,7 +135,9 @@ export default function Home() {
             <div className="mt-5 flex items-center justify-center gap-2">
               <span className="text-base">🔥</span>
               <span className="text-sm text-gray-400">
-                <span className="font-semibold text-white">
+                <span
+                  className={`font-semibold text-green-400 inline-block ${orderPulse ? 'number-pulse' : ''}`}
+                >
                   +{orderCount.toLocaleString('pt-BR')}
                 </span>{' '}
                 pedidos entregues com sucesso

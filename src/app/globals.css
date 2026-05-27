@@ -70,3 +70,40 @@ body {
   background-size: 200% 200%;
   animation: gradient-shift 8s ease infinite;
 }
+
+/* Order counter pulse */
+@keyframes numberPulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.15); color: #22C55E; }
+  100% { transform: scale(1); }
+}
+.number-pulse {
+  animation: numberPulse 0.4s ease-out;
+}
+
+/* Copy button infinite pulse */
+@keyframes copyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
+}
+.copy-pulse {
+  animation: copyPulse 2s ease-in-out infinite;
+}
+
+/* Blink for expiring timer */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.blink {
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+/* Indeterminate progress bar */
+@keyframes progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.progress-bar {
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}

@@ -12,12 +12,12 @@ const testimonials = [
     title: 'Depoimento Ana',
   },
   {
-    name: 'Heitor',
-    subtitle: 'Cliente satisfeito',
+    name: 'Camila',
+    subtitle: 'Cliente satisfeita',
     vimeoId: '1177429822',
     color: '#9B59B6',
     paddingTop: '177.78%',
-    title: 'Depoimento Heitor',
+    title: 'Depoimento Camila',
   },
   {
     name: 'Flavio',

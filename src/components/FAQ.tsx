@@ -43,7 +43,11 @@ export default function FAQ() {
           {FAQS.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-xl border border-white/5 bg-white/5 overflow-hidden"
+              className={`rounded-xl border overflow-hidden transition-colors duration-200 ${
+                openIdx === idx
+                  ? 'border-purple-500/30 bg-white/[0.06]'
+                  : 'border-white/8 bg-white/[0.04] hover:border-purple-500/20'
+              }`}
             >
               <button
                 className="w-full flex items-center justify-between p-4 text-left"
@@ -51,8 +55,8 @@ export default function FAQ() {
               >
                 <span className="text-sm font-medium text-white pr-4">{faq.q}</span>
                 <ChevronDown
-                  className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${
-                    openIdx === idx ? 'rotate-180' : ''
+                  className={`h-4 w-4 flex-shrink-0 transition-all duration-200 ${
+                    openIdx === idx ? 'rotate-180 text-purple-400' : 'text-gray-500'
                   }`}
                 />
               </button>

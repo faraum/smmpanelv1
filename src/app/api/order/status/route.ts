@@ -1,14 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isPreviewMode, parsePreviewOrderId } from '@/lib/config'
+import { isActivePaymentsConfigured, getChargeStatus } from '@/lib/activepayments'
 import type { OrderStatus } from '@/types'
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const orderId = searchParams.get('orderId')
+    const chargeId = searchParams.get('chargeId')
 
     if (!orderId) {
       return NextResponse.json({ success: false, error: 'orderId é obrigatório' }, { status: 400 })
+    }
+
+    // ── PAYMENT STATUS POLLING (from checkout page) ───────────────────────────
+    if (chargeId) {
+      // Preview mode: return fake paid status after a delay (for testing)
+      if (!isActivePaymentsConfigured() || orderId.startsWith('preview_')) {
+        return NextResponse.json({
+          success: true,
+          paymentStatus: 'pending',
+          preview: true,
+        })
+      }
+
+      try {
+        const charge = await getChargeStatus(chargeId)
+        return NextResponse.json({
+          success: true,
+          paymentStatus: charge.status,
+          paidAt: charge.paidAt,
+        })
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro ao consultar'
+        return NextResponse.json({ success: false, error: message }, { status: 500 })
+      }
     }
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────
