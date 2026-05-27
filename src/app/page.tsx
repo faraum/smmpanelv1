@@ -268,12 +268,12 @@ export default function Home() {
           </div>
         </section>
 
+        {/* CTA */}
+        <CTASection />
+
         <div id="faq" className="px-4">
           <FAQ />
         </div>
-
-        {/* CTA */}
-        <CTASection />
 
         {/* Footer */}
         <footer className="border-t border-white/5 py-8 px-4">
