@@ -16,6 +16,7 @@ interface OrderSummary {
   serviceName: string
   quantity: number
   instagramUser: string
+  instagramLink: string
   priceBRL: number
   pixCode: string
   pixQrCode: string
@@ -27,15 +28,23 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
   if (isPreviewMode || orderId.startsWith('preview_')) {
     const parsed = parsePreviewOrderId(orderId)
     const pkg = parsed ? getPackageById(parsed.packageId) : null
+    const instagramUser = parsed?.instagramUser ?? '@usuario_exemplo'
+    const categorySlug = pkg?.categorySlug ?? 'seguidores-mundiais'
+    const platform = categorySlug.startsWith('tiktok') ? 'tiktok' : 'instagram'
+    const username = instagramUser.replace(/^@/, '')
+    const instagramLink = platform === 'tiktok'
+      ? `https://www.tiktok.com/@${username}`
+      : `https://www.instagram.com/${username}/`
 
     return {
       serviceName: pkg ? pkg.name : 'Seguidores Mundiais',
       quantity: pkg?.quantity ?? 1000,
-      instagramUser: parsed?.instagramUser ?? '@usuario_exemplo',
+      instagramUser,
+      instagramLink,
       priceBRL: pkg?.priceBRL ?? 17.90,
       pixCode: '',
       pixQrCode: '',
-      categorySlug: pkg?.categorySlug ?? 'seguidores-mundiais',
+      categorySlug,
     }
   }
 
@@ -53,6 +62,7 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
       serviceName: o.serviceName,
       quantity: o.quantity,
       instagramUser: o.instagramUser,
+      instagramLink: o.instagramLink || o.instagramUser,
       priceBRL: o.priceBRL,
       pixCode: o.pixCode || '',
       pixQrCode: o.pixQrCode || '',
@@ -76,6 +86,7 @@ export default async function CheckoutPage({ params }: Props) {
     serviceName: 'Seguidores Mundiais',
     quantity: 1000,
     instagramUser: parsePreviewOrderId(orderId)?.instagramUser ?? '@usuario_exemplo',
+    instagramLink: `https://www.instagram.com/${(parsePreviewOrderId(orderId)?.instagramUser ?? '@usuario_exemplo').replace(/^@/, '')}/`,
     priceBRL: 17.90,
     pixCode: '',
     pixQrCode: '',
@@ -105,6 +116,7 @@ export default async function CheckoutPage({ params }: Props) {
             serviceName={summary.serviceName}
             quantity={summary.quantity}
             instagramUser={summary.instagramUser}
+            instagramLink={summary.instagramLink}
             categorySlug={summary.categorySlug}
           />
         </div>

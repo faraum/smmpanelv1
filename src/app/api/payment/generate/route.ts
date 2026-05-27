@@ -4,7 +4,8 @@ import { createPixCharge } from '@/lib/activepayments'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    // body: { amount, orderId, customerName, customerCpf }
+    // body: { amount, orderId, customerName, customerCpf,
+    //         platform, serviceType, region, quantity, instagramLink, bumpQty }
 
     const hasPaymentKeys =
       process.env.ACTIVEPAYMENTS_PUBLIC_KEY && process.env.ACTIVEPAYMENTS_SECRET_KEY
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         chargeId: 'preview-' + Date.now(),
         pixCode: fakePixCode,
-        qrCodeBase64: qrDataUrl, // já é data URL neste caso
+        qrCodeBase64: qrDataUrl,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         preview: true,
       })
@@ -27,19 +28,29 @@ export async function POST(req: Request) {
     // ── MODO PRODUÇÃO — criar cobrança PIX real via ActivePayments ────────────
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hypefy.netlify.app'
 
+    // Encode all order data into externalReference so the webhook can reconstruct it
+    // Format: orderId|platform|serviceType|region|quantity|instagramLink|bumpQty
+    const externalReference = [
+      body.orderId || 'order-' + Date.now(),
+      body.platform || 'instagram',
+      body.serviceType || 'followers',
+      body.region || 'global',
+      String(body.quantity || '100'),
+      body.instagramLink || '',
+      String(body.bumpQty || '0'),
+    ].join('|')
+
     const charge = await createPixCharge({
       amount: body.amount,
       customerName: body.customerName || 'Cliente Hypefy',
       customerCpf: (body.customerCpf || '00000000000').replace(/\D/g, ''),
-      externalReference: body.orderId || 'order-' + Date.now(),
+      externalReference,
       postbackUrl: `${siteUrl}/api/payment/webhook`,
     })
 
-    // Normalizar qrCodeBase64 para data URL se necessário
+    // Normalise qrCodeBase64 to data URL if needed
     const raw = charge.pix.qrCodeBase64 || ''
-    const qrCodeBase64 = raw.startsWith('data:')
-      ? raw
-      : `data:image/png;base64,${raw}`
+    const qrCodeBase64 = raw.startsWith('data:') ? raw : `data:image/png;base64,${raw}`
 
     return NextResponse.json({
       chargeId: charge.chargeId,

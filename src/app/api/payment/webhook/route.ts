@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { processOrderAfterPayment } from '@/lib/process-order'
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
         .digest('hex')
 
       if (signature !== expectedSignature) {
-        console.warn('Webhook rejeitado: assinatura inválida')
+        console.warn('[Webhook] Rejeitado: assinatura inválida')
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
       }
     }
@@ -23,30 +24,38 @@ export async function POST(req: Request) {
     const payload = JSON.parse(rawBody)
     const { event, data } = payload
 
-    console.log(`[Webhook] Evento recebido: ${event}`, data)
+    console.log(`[Webhook] Evento: ${event}`)
 
     if (event === 'charge.paid') {
       const { chargeId, externalReference, amount } = data
       console.log(
-        `[Webhook] ✅ PAGAMENTO CONFIRMADO! ChargeId: ${chargeId}, OrderId: ${externalReference}, Valor: R$ ${amount}`
+        `[Webhook] 💰 Pago! chargeId:${chargeId} ref:${externalReference} valor:R$${amount}`
       )
 
-      // TODO: quando MongoDB estiver configurado, descomentar:
-      // const { connectDB } = await import('@/lib/mongodb')
-      // const { default: Order } = await import('@/lib/models/Order')
-      // const { getBulkFollowsClient } = await import('@/lib/bulkfollows')
-      // await connectDB()
-      // const order = await Order.findOne({ orderId: externalReference })
-      // if (order && order.status === 'PENDING_PAYMENT') {
-      //   order.status = 'PAID'
-      //   order.paidAt = new Date()
-      //   await order.save()
-      //   const client = getBulkFollowsClient()
-      //   const bulkResult = await client.createOrder(order.serviceId, order.instagramLink, order.quantity)
-      //   order.bulkOrderId = bulkResult.order
-      //   order.status = 'PROCESSING'
-      //   await order.save()
-      // }
+      // externalReference format: orderId|platform|serviceType|region|quantity|instagramLink|bumpQty
+      if (externalReference && externalReference.includes('|')) {
+        const parts = (externalReference as string).split('|')
+        // instagramLink may itself contain | if it somehow has query params — join remaining parts
+        const [orderId, platform, serviceType, region, quantity, ...rest] = parts
+        const bumpQty = rest.pop() ?? '0'
+        const instagramLink = rest.join('|')
+
+        const result = await processOrderAfterPayment({
+          orderId,
+          platform: platform as 'instagram' | 'tiktok',
+          serviceType: serviceType as 'followers' | 'likes' | 'views' | 'comments',
+          region: region as 'global' | 'brazil',
+          quantity: parseInt(quantity) || 0,
+          instagramLink,
+          bumpQty: parseInt(bumpQty) || 0,
+        })
+
+        if (result.success) {
+          console.log(`[Webhook] 🚀 BulkFollows pedido criado! id:${result.bulkOrderId}`)
+        } else {
+          console.error(`[Webhook] ❌ Falha BulkFollows: ${result.error}`)
+        }
+      }
     }
 
     if (event === 'charge.expired') {
@@ -54,10 +63,10 @@ export async function POST(req: Request) {
     }
 
     if (event === 'charge.cancelled') {
-      console.log(`[Webhook] ❌ Cobrança cancelada: ${data.chargeId}`)
+      console.log(`[Webhook] ❌ Cancelado: ${data.chargeId}`)
     }
 
-    // Retornar 200 sempre para evitar retry infinito do ActivePayments
+    // Sempre retornar 200 para evitar retry infinito
     return NextResponse.json({ received: true })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erro interno'

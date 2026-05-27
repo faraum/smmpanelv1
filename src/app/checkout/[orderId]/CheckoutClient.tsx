@@ -20,6 +20,7 @@ interface CheckoutClientProps {
   serviceName: string
   quantity: number
   instagramUser: string
+  instagramLink: string
   categorySlug: string
 }
 
@@ -47,6 +48,32 @@ function getCategoryKey(slug: string): string {
   if (slug.startsWith('visualizacoes')) return 'visualizacoes'
   if (slug.startsWith('comentarios'))  return 'comentarios'
   return 'outros'
+}
+
+type ServiceType = 'followers' | 'likes' | 'views' | 'comments'
+type Region = 'global' | 'brazil'
+
+function parseCategory(slug: string): {
+  platform: 'instagram' | 'tiktok'
+  serviceType: ServiceType
+  region: Region
+} {
+  const map: Record<string, { platform: 'instagram' | 'tiktok'; serviceType: ServiceType; region: Region }> = {
+    'seguidores-mundiais':     { platform: 'instagram', serviceType: 'followers', region: 'global' },
+    'seguidores-brasileiros':  { platform: 'instagram', serviceType: 'followers', region: 'brazil' },
+    'curtidas-mundiais':       { platform: 'instagram', serviceType: 'likes',     region: 'global' },
+    'curtidas-brasileiras':    { platform: 'instagram', serviceType: 'likes',     region: 'brazil' },
+    'visualizacoes-reels':     { platform: 'instagram', serviceType: 'views',     region: 'global' },
+    'views-stories':           { platform: 'instagram', serviceType: 'views',     region: 'global' },
+    'comentarios-brasileiros': { platform: 'instagram', serviceType: 'comments',  region: 'brazil' },
+    'tiktok-seguidores-global': { platform: 'tiktok', serviceType: 'followers', region: 'global' },
+    'tiktok-seguidores-br':     { platform: 'tiktok', serviceType: 'followers', region: 'brazil' },
+    'tiktok-curtidas-global':   { platform: 'tiktok', serviceType: 'likes',     region: 'global' },
+    'tiktok-curtidas-br':       { platform: 'tiktok', serviceType: 'likes',     region: 'brazil' },
+    'tiktok-views-global':      { platform: 'tiktok', serviceType: 'views',     region: 'global' },
+    'tiktok-views-br':          { platform: 'tiktok', serviceType: 'views',     region: 'brazil' },
+  }
+  return map[slug] ?? { platform: 'instagram', serviceType: 'followers', region: 'global' }
 }
 
 function formatTime(s: number): string {
@@ -96,6 +123,7 @@ export default function CheckoutClient({
   serviceName,
   quantity,
   instagramUser,
+  instagramLink,
   categorySlug,
 }: CheckoutClientProps) {
   const router = useRouter()
@@ -118,6 +146,7 @@ export default function CheckoutClient({
   // ── Payment state
   const [chargeId, setChargeId] = useState<string | null>(null)
   const [isPreviewPayment, setIsPreviewPayment] = useState(false)
+  const [finalBumpQty, setFinalBumpQty] = useState(0)
   const [pixCode, setPixCode] = useState(initialPixCode)
   const [pixQrCode, setPixQrCode] = useState(initialPixQrCode)
   const [copied, setCopied] = useState(false)
@@ -154,9 +183,21 @@ export default function CheckoutClient({
   useEffect(() => {
     if (phase !== 'payment' || !chargeId || paymentConfirmed || expired || isPreviewPayment) return
 
+    const { platform, serviceType, region } = parseCategory(categorySlug)
+
     const poll = async () => {
       try {
-        const res = await fetch(`/api/payment/check?chargeId=${chargeId}`)
+        const params = new URLSearchParams({
+          chargeId,
+          orderId,
+          platform,
+          serviceType,
+          region,
+          quantity: String(quantity),
+          instagramLink,
+          bumpQty: String(finalBumpQty),
+        })
+        const res = await fetch(`/api/payment/check?${params.toString()}`)
         const data = await res.json()
         if (data.status === 'paid') {
           setPaymentConfirmed(true)
@@ -169,7 +210,7 @@ export default function CheckoutClient({
 
     const id = setInterval(poll, 5000)
     return () => clearInterval(id)
-  }, [phase, chargeId, orderId, paymentConfirmed, expired, isPreviewPayment, router])
+  }, [phase, chargeId, orderId, quantity, instagramLink, categorySlug, finalBumpQty, paymentConfirmed, expired, isPreviewPayment, router])
 
   // ── Bump helpers
   const addOffer = (offer: BumpOffer) => {
@@ -196,6 +237,9 @@ export default function CheckoutClient({
       return
     }
 
+    const { platform, serviceType, region } = parseCategory(categorySlug)
+    const bumpQty = added.reduce((s, i) => s + i.quantity, 0)
+    setFinalBumpQty(bumpQty)
     setGenerating(true)
 
     try {
@@ -207,6 +251,12 @@ export default function CheckoutClient({
           amount: total,
           customerName: customerName.trim(),
           customerCpf: customerCpf.replace(/\D/g, ''),
+          platform,
+          serviceType,
+          region,
+          quantity,
+          instagramLink,
+          bumpQty,
         }),
       })
       const data = await res.json()
@@ -227,7 +277,7 @@ export default function CheckoutClient({
     } finally {
       setGenerating(false)
     }
-  }, [orderId, total, customerName, customerCpf])
+  }, [orderId, total, customerName, customerCpf, categorySlug, quantity, instagramLink, added])
 
   // ── Copy PIX code
   const handleCopy = async () => {
