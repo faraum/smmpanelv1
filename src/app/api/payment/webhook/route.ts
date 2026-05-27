@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { orderDataStore } from '@/lib/order-store'
 import { processOrderAfterPayment } from '@/lib/process-order'
 
 export async function POST(req: Request) {
@@ -32,28 +33,30 @@ export async function POST(req: Request) {
         `[Webhook] 💰 Pago! chargeId:${chargeId} ref:${externalReference} valor:R$${amount}`
       )
 
-      // externalReference format: orderId|platform|serviceType|region|quantity|instagramLink|bumpQty
-      if (externalReference && externalReference.includes('|')) {
-        const parts = (externalReference as string).split('|')
-        // instagramLink may itself contain | if it somehow has query params — join remaining parts
-        const [orderId, platform, serviceType, region, quantity, ...rest] = parts
-        const bumpQty = rest.pop() ?? '0'
-        const instagramLink = rest.join('|')
+      if (externalReference) {
+        const orderId = String(externalReference)
 
-        const result = await processOrderAfterPayment({
-          orderId,
-          platform: platform as 'instagram' | 'tiktok',
-          serviceType: serviceType as 'followers' | 'likes' | 'views' | 'comments',
-          region: region as 'global' | 'brazil',
-          quantity: parseInt(quantity) || 0,
-          instagramLink,
-          bumpQty: parseInt(bumpQty) || 0,
-        })
-
-        if (result.success) {
-          console.log(`[Webhook] 🚀 BulkFollows pedido criado! id:${result.bulkOrderId}`)
+        // Look up full order data from in-memory store (set by generate route)
+        const stored = orderDataStore.get(orderId)
+        if (!stored?.instagramLink) {
+          console.warn(`[Webhook] Dados não encontrados para orderId:${orderId} — polling será o fallback`)
         } else {
-          console.error(`[Webhook] ❌ Falha BulkFollows: ${result.error}`)
+          const result = await processOrderAfterPayment({
+            orderId,
+            platform: stored.platform as 'instagram' | 'tiktok',
+            serviceType: stored.serviceType as 'followers' | 'likes' | 'views' | 'comments',
+            region: stored.region as 'global' | 'brazil',
+            quantity: stored.quantity,
+            instagramLink: stored.instagramLink,
+            bumpQty: stored.bumpQty,
+          })
+
+          if (result.success) {
+            console.log(`[Webhook] 🚀 BulkFollows pedido criado! id:${result.bulkOrderId}`)
+            orderDataStore.delete(orderId) // cleanup
+          } else {
+            console.error(`[Webhook] ❌ Falha BulkFollows: ${result.error}`)
+          }
         }
       }
     }

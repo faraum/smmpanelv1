@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createPixCharge } from '@/lib/activepayments'
+import { orderDataStore } from '@/lib/order-store'
 
 export async function POST(req: Request) {
   try {
@@ -28,17 +29,25 @@ export async function POST(req: Request) {
     // ── MODO PRODUÇÃO — criar cobrança PIX real via ActivePayments ────────────
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hypefy.netlify.app'
 
-    // Encode all order data into externalReference so the webhook can reconstruct it
-    // Format: orderId|platform|serviceType|region|quantity|instagramLink|bumpQty
-    const externalReference = [
-      body.orderId || 'order-' + Date.now(),
-      body.platform || 'instagram',
-      body.serviceType || 'followers',
-      body.region || 'global',
-      String(body.quantity || '100'),
-      body.instagramLink || '',
-      String(body.bumpQty || '0'),
-    ].join('|')
+    const orderId = body.orderId || 'ord-' + Date.now()
+    const platform    = body.platform    || 'instagram'
+    const serviceType = body.serviceType || 'followers'
+    const region      = body.region      || 'global'
+    const quantity    = Number(body.quantity) || 100
+    const bumpQty     = Number(body.bumpQty)  || 0
+
+    // Save full order data (including instagramLink) in memory for the webhook
+    orderDataStore.set(orderId, {
+      platform,
+      serviceType,
+      region,
+      quantity,
+      instagramLink: body.instagramLink || '',
+      bumpQty,
+    })
+
+    // externalReference: only the orderId, max 90 chars
+    const externalReference = String(orderId).slice(0, 90)
 
     const charge = await createPixCharge({
       amount: body.amount,
