@@ -59,7 +59,7 @@ export const packages: Package[] = [
   // ══ INSTAGRAM ════════════════════════════════════════════════════════════════
 
   // ── Seguidores Mundiais ───────────────────────────────────────────────────
-  { id: 'seg-m-100',   platform: 'instagram', category: 'Seguidores Mundiais', categorySlug: 'seguidores-mundiais', name: 'Seguidores Mundiais', quantity: 100,   priceBRL: 9.90,   bulkServiceId: 0, inputType: 'profile' },
+  { id: 'seg-m-100',   platform: 'instagram', category: 'Seguidores Mundiais', categorySlug: 'seguidores-mundiais', name: 'Seguidores Mundiais', quantity: 100,   priceBRL: 1.00,   bulkServiceId: 0, inputType: 'profile' },
   { id: 'seg-m-500',   platform: 'instagram', category: 'Seguidores Mundiais', categorySlug: 'seguidores-mundiais', name: 'Seguidores Mundiais', quantity: 500,   priceBRL: 12.90,  bulkServiceId: 0, inputType: 'profile' },
   { id: 'seg-m-1000',  platform: 'instagram', category: 'Seguidores Mundiais', categorySlug: 'seguidores-mundiais', name: 'Seguidores Mundiais', quantity: 1000,  priceBRL: 17.90,  bulkServiceId: 0, inputType: 'profile', discount: '10% OFF' },
   { id: 'seg-m-2000',  platform: 'instagram', category: 'Seguidores Mundiais', categorySlug: 'seguidores-mundiais', name: 'Seguidores Mundiais', quantity: 2000,  priceBRL: 32.90,  bulkServiceId: 0, inputType: 'profile', discount: '15% OFF' },

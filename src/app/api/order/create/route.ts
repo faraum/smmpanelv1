@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────
     if (isPreviewMode) {
-      const orderId = makePreviewOrderId(packageId)
+      const orderId = makePreviewOrderId(packageId, validation.user)
       return NextResponse.json({
         success: true,
         orderId,

@@ -22,22 +22,31 @@ export const isPreviewMode =
  * Os packageIds usam somente hífens (-), então o separador underscore (_)
  * permite identificar o packageId sem ambiguidade.
  */
-export function makePreviewOrderId(packageId: string): string {
-  return `preview_${packageId}_${Date.now()}`
+export function makePreviewOrderId(packageId: string, instagramUser?: string): string {
+  const base = `preview_${packageId}_${Date.now()}`
+  if (!instagramUser) return base
+  const encoded = Buffer.from(instagramUser).toString('base64').replace(/=/g, '')
+  return `${base}_${encoded}`
 }
 
 export function parsePreviewOrderId(
   orderId: string
-): { packageId: string; timestamp: string } | null {
+): { packageId: string; timestamp: string; instagramUser?: string } | null {
   if (!orderId.startsWith('preview_')) return null
 
-  const withoutPrefix = orderId.slice('preview_'.length) // "seg-m-1000_1748000000000"
-  const underscoreIdx = withoutPrefix.lastIndexOf('_')
-  if (underscoreIdx === -1) return null
+  // packageIds only use hyphens, never underscores, so splitting by _ is unambiguous:
+  // format: preview_{packageId}_{timestamp}[_{base64user}]
+  const withoutPrefix = orderId.slice('preview_'.length)
+  const parts = withoutPrefix.split('_')
+  if (parts.length < 2) return null
 
-  const packageId = withoutPrefix.slice(0, underscoreIdx)  // "seg-m-1000"
-  const timestamp = withoutPrefix.slice(underscoreIdx + 1) // "1748000000000"
-  return { packageId, timestamp }
+  const packageId = parts[0]
+  const timestamp = parts[1]
+  const instagramUser = parts[2]
+    ? Buffer.from(parts[2], 'base64').toString('utf8')
+    : undefined
+
+  return { packageId, timestamp, instagramUser }
 }
 
 /** Pedidos fake para exibir no painel admin em modo preview */

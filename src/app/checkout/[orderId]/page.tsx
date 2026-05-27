@@ -31,7 +31,7 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
     return {
       serviceName: pkg ? pkg.name : 'Seguidores Mundiais',
       quantity: pkg?.quantity ?? 1000,
-      instagramUser: '@usuario_exemplo',
+      instagramUser: parsed?.instagramUser ?? '@usuario_exemplo',
       priceBRL: pkg?.priceBRL ?? 17.90,
       pixCode: '',
       pixQrCode: '',
@@ -75,7 +75,7 @@ export default async function CheckoutPage({ params }: Props) {
   const summary = order ?? {
     serviceName: 'Seguidores Mundiais',
     quantity: 1000,
-    instagramUser: '@usuario_exemplo',
+    instagramUser: parsePreviewOrderId(orderId)?.instagramUser ?? '@usuario_exemplo',
     priceBRL: 17.90,
     pixCode: '',
     pixQrCode: '',

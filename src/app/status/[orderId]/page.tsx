@@ -31,7 +31,7 @@ async function getOrderData(orderId: string): Promise<OrderData | null> {
       orderId,
       serviceName: pkg ? pkg.name : 'Serviço de Exemplo',
       quantity: pkg?.quantity ?? 1000,
-      instagramUser: '@usuario_exemplo',
+      instagramUser: parsed?.instagramUser ?? '@usuario_exemplo',
       priceBRL: pkg?.priceBRL ?? 17.90,
       status: 'PROCESSING',
     }
