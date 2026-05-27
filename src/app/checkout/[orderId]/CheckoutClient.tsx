@@ -117,6 +117,7 @@ export default function CheckoutClient({
 
   // ── Payment state
   const [chargeId, setChargeId] = useState<string | null>(null)
+  const [isPreviewPayment, setIsPreviewPayment] = useState(false)
   const [pixCode, setPixCode] = useState(initialPixCode)
   const [pixQrCode, setPixQrCode] = useState(initialPixQrCode)
   const [copied, setCopied] = useState(false)
@@ -151,13 +152,13 @@ export default function CheckoutClient({
 
   // ── Polling (check payment status every 5s)
   useEffect(() => {
-    if (phase !== 'payment' || !chargeId || paymentConfirmed || expired) return
+    if (phase !== 'payment' || !chargeId || paymentConfirmed || expired || isPreviewPayment) return
 
     const poll = async () => {
       try {
-        const res = await fetch(`/api/order/status?orderId=${orderId}&chargeId=${chargeId}`)
+        const res = await fetch(`/api/payment/check?chargeId=${chargeId}`)
         const data = await res.json()
-        if (data.paymentStatus === 'paid') {
+        if (data.status === 'paid') {
           setPaymentConfirmed(true)
           setTimeout(() => router.push(`/status/${orderId}`), 2000)
         }
@@ -168,7 +169,7 @@ export default function CheckoutClient({
 
     const id = setInterval(poll, 5000)
     return () => clearInterval(id)
-  }, [phase, chargeId, orderId, paymentConfirmed, expired, router])
+  }, [phase, chargeId, orderId, paymentConfirmed, expired, isPreviewPayment, router])
 
   // ── Bump helpers
   const addOffer = (offer: BumpOffer) => {
@@ -209,15 +210,18 @@ export default function CheckoutClient({
         }),
       })
       const data = await res.json()
-      if (data.success) {
-        setChargeId(data.chargeId ?? null)
-        setPixCode(data.pixCode)
-        setPixQrCode(data.pixQrCode)
-        setPaymentTimer(5 * 60)
-        setPhase('payment')
-      } else {
+      if (data.error) {
         setNameError(data.error || 'Erro ao gerar PIX. Tente novamente.')
+        return
       }
+      setChargeId(data.chargeId ?? null)
+      setIsPreviewPayment(!!data.preview)
+      setPixCode(data.pixCode)
+      // qrCodeBase64 pode ser data URL completa ou base64 puro
+      const qr = data.qrCodeBase64 || ''
+      setPixQrCode(qr.startsWith('data:') ? qr : qr ? `data:image/png;base64,${qr}` : '')
+      setPaymentTimer(5 * 60)
+      setPhase('payment')
     } catch {
       setNameError('Falha na conexão. Tente novamente.')
     } finally {
@@ -261,7 +265,7 @@ export default function CheckoutClient({
     }
   }
 
-  const showSimulate = isPreview || process.env.NODE_ENV === 'development'
+  const showSimulate = isPreviewPayment
   const catIcon = purchasedCat === 'seguidores' ? '👥'
     : purchasedCat === 'curtidas' ? '❤️'
     : purchasedCat === 'visualizacoes' ? '▶️'
@@ -479,14 +483,12 @@ export default function CheckoutClient({
             </div>
           </div>
 
-          {/* Simulate (preview) */}
+          {/* Simulate (preview only — hidden when PIX is real) */}
           {showSimulate && (
             <div className="border-t border-white/5 pt-4 space-y-2">
-              {isPreview && (
-                <p className="text-xs text-center text-amber-400/70">
-                  🧪 Botão disponível em modo preview
-                </p>
-              )}
+              <p className="text-xs text-center text-amber-400/70">
+                🔧 Botão disponível em modo preview
+              </p>
               <button
                 onClick={handleSimulate}
                 disabled={simulating}

@@ -1,81 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { isActivePaymentsConfigured, createPixCharge } from '@/lib/activepayments'
+import { NextResponse } from 'next/server'
+import { createPixCharge } from '@/lib/activepayments'
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { orderId, amount, customerName, customerCpf } = body
+    // body: { amount, orderId, customerName, customerCpf }
 
-    if (!orderId) {
-      return NextResponse.json({ success: false, error: 'orderId é obrigatório' }, { status: 400 })
-    }
+    const hasPaymentKeys =
+      process.env.ACTIVEPAYMENTS_PUBLIC_KEY && process.env.ACTIVEPAYMENTS_SECRET_KEY
 
-    const isPreviewMode = !isActivePaymentsConfigured()
-
-    // ── MODO PREVIEW ─────────────────────────────────────────────────────────
-    if (isPreviewMode || orderId.startsWith('preview_')) {
-      const { generateQRCode } = await import('@/lib/pix')
-      const priceBRL = amount ?? 17.90
-      const fakePixCode = `00020126580014BR.GOV.BCB.PIX0136preview-pix-code-${orderId.slice(-6)}5204000053039865406${String(Math.round(priceBRL * 100)).padStart(6, '0')}5802BR5906HYPEFY6008SAOPAULO6207050300016304FAKE`
-      const pixQrCode = await generateQRCode(fakePixCode)
+    // ── MODO PREVIEW — só quando NÃO tem as keys configuradas ────────────────
+    if (!hasPaymentKeys) {
+      const QRCode = (await import('qrcode')).default
+      const fakePixCode = '00020126580014BR.GOV.BCB.PIX0136preview-pix-' + Date.now()
+      const qrDataUrl = await QRCode.toDataURL(fakePixCode)
 
       return NextResponse.json({
-        success: true,
-        chargeId: `preview-${Date.now()}`,
+        chargeId: 'preview-' + Date.now(),
         pixCode: fakePixCode,
-        pixQrCode,
-        priceBRL,
+        qrCodeBase64: qrDataUrl, // já é data URL neste caso
         expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         preview: true,
       })
     }
 
-    // ── MODO PRODUÇÃO — ActivePayments ────────────────────────────────────────
-    if (!amount || !customerName || !customerCpf) {
-      return NextResponse.json(
-        { success: false, error: 'amount, customerName e customerCpf são obrigatórios' },
-        { status: 400 }
-      )
-    }
-
+    // ── MODO PRODUÇÃO — criar cobrança PIX real via ActivePayments ────────────
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hypefy.netlify.app'
 
     const charge = await createPixCharge({
-      amount,
-      customerName,
-      customerCpf,
-      externalReference: orderId,
+      amount: body.amount,
+      customerName: body.customerName || 'Cliente Hypefy',
+      customerCpf: (body.customerCpf || '00000000000').replace(/\D/g, ''),
+      externalReference: body.orderId || 'order-' + Date.now(),
       postbackUrl: `${siteUrl}/api/payment/webhook`,
     })
 
-    // Optionally persist chargeId to DB
-    try {
-      const { connectDB } = await import('@/lib/mongodb')
-      const { default: Order } = await import('@/lib/models/Order')
-      await connectDB()
-      await Order.updateOne({ orderId }, { $set: { chargeId: charge.chargeId } })
-    } catch {
-      // non-fatal — charge was created, DB update failed
-    }
-
-    // Generate QR Code image from the text code
-    const { generateQRCode } = await import('@/lib/pix')
-    const pixQrCode = await generateQRCode(charge.pix.qrCode)
+    // Normalizar qrCodeBase64 para data URL se necessário
+    const raw = charge.pix.qrCodeBase64 || ''
+    const qrCodeBase64 = raw.startsWith('data:')
+      ? raw
+      : `data:image/png;base64,${raw}`
 
     return NextResponse.json({
-      success: true,
       chargeId: charge.chargeId,
       pixCode: charge.pix.qrCode,
-      pixQrCode,
-      priceBRL: charge.amount,
+      qrCodeBase64,
       expiresAt: charge.pix.expiresAt,
       preview: false,
     })
-  } catch (error) {
-    console.error('Erro ao gerar pagamento:', error)
-    return NextResponse.json(
-      { success: false, error: 'Falha ao gerar dados de pagamento' },
-      { status: 500 }
-    )
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erro ao gerar pagamento'
+    console.error('Erro ao gerar PIX:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
