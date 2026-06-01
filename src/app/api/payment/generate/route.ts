@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createPixCharge } from '@/lib/activepayments'
-import { buildExternalRef, orderDataStore } from '@/lib/order-store'
+import { orderDataStore } from '@/lib/order-store'
  
 export async function POST(req: Request) {
   try {
@@ -37,17 +37,9 @@ export async function POST(req: Request) {
     const bumpQty     = Number(body.bumpQty)  || 0
     const instagramLink = body.instagramLink || ''
  
-    // ── Encode ALL order data into externalReference (survives across instances)
-    const externalReference = buildExternalRef(
-      orderId,
-      platform,
-      serviceType,
-      region,
-      quantity,
-      instagramLink,
-      bumpQty,
-    )
- 
+    // externalReference must be ≤ 100 chars — use orderId directly
+    const externalReference = orderId
+
     console.log(`[Generate] externalRef length: ${externalReference.length} chars`)
  
     // Also keep in-memory store as fallback for the polling path
