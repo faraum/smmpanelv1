@@ -1,5 +1,5 @@
 import { getBulkFollowsClient } from './bulkfollows'
-import { findCheapestService } from './service-mapper'
+import { getServiceId } from './service-ids'
 
 export interface OrderPayload {
   orderId: string
@@ -22,41 +22,27 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
   }
 
   try {
-    const service = await findCheapestService({
-      platform: order.platform,
-      type: order.serviceType,
-      region: order.region,
-      quantity: order.quantity,
-    })
+    const serviceId = getServiceId(order.platform, order.serviceType, order.region)
 
-    if (!service) {
-      const msg = `Nenhum serviço encontrado: ${order.platform} ${order.serviceType} ${order.region} qty:${order.quantity}`
+    if (!serviceId) {
+      const msg = `Serviço não mapeado: ${order.platform}/${order.serviceType}/${order.region}`
       console.error(`[BulkFollows] ${msg}`)
       return { success: false, error: msg }
     }
 
-    console.log(
-      `[BulkFollows] Serviço: "${service.name}" (id:${service.serviceId} $${service.rate}/1K)`
-    )
+    console.log(`[BulkFollows] Serviço: ${order.platform} ${order.serviceType} ${order.region} → ID: ${serviceId}`)
 
     const client = getBulkFollowsClient()
-    const result = await client.createOrder(service.serviceId, order.instagramLink, order.quantity)
+    const result = await client.createOrder(serviceId, order.instagramLink, order.quantity)
 
-    console.log(
-      `[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`
-    )
+    console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 
     // Process bump followers as a separate order (non-critical)
     if (order.bumpQty && order.bumpQty > 0) {
       try {
-        const bumpService = await findCheapestService({
-          platform: order.platform,
-          type: 'followers',
-          region: 'global',
-          quantity: order.bumpQty,
-        })
-        if (bumpService) {
-          await client.createOrder(bumpService.serviceId, order.instagramLink, order.bumpQty)
+        const bumpServiceId = getServiceId(order.platform, 'followers', 'global')
+        if (bumpServiceId) {
+          await client.createOrder(bumpServiceId, order.instagramLink, order.bumpQty)
           console.log(`[BulkFollows] ✅ Bump criado! qty:${order.bumpQty}`)
         }
       } catch (bumpErr) {
