@@ -17,6 +17,7 @@ export async function GET(req: Request) {
     const region        = searchParams.get('region')
     const quantity      = searchParams.get('quantity')
     const instagramLink = searchParams.get('instagramLink')
+    const username      = searchParams.get('username')
     const bumpQty       = searchParams.get('bumpQty')
     const comments      = searchParams.get('comments')
 
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
         region: region as 'global' | 'brazil',
         quantity: parseInt(quantity),
         instagramLink,
+        username: username || '',
         bumpQty: parseInt(bumpQty || '0'),
         comments: comments || undefined,
       })

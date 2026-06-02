@@ -1,3 +1,22 @@
+const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
+
+const TEST_QUANTITIES: Record<string, number> = {
+  followers: 50,
+  likes:     50,
+  views:     100,
+  stories:   100,
+  comments:  5,
+}
+
+function slugToServiceType(slug: string): string {
+  if (slug.includes('seguidor')) return 'followers'
+  if (slug.includes('curtida'))  return 'likes'
+  if (slug.includes('visual') || slug.includes('views')) return 'views'
+  if (slug.includes('stor'))     return 'stories'
+  if (slug.includes('coment'))   return 'comments'
+  return 'followers'
+}
+
 // IMPORTANTE: Ao configurar bulkServiceId, SEMPRE escolher o serviço
 // mais barato da BulkFollows para cada tipo:
 // - Global/Mundial = cheapest service in category
@@ -55,7 +74,7 @@ export const categories: Category[] = instagramSubCategories
 
 // ── PACKAGES ─────────────────────────────────────────────────────────────────
 
-export const packages: Package[] = [
+const RAW_PACKAGES: Package[] = [
 
   // ══ INSTAGRAM ════════════════════════════════════════════════════════════════
 
@@ -183,6 +202,17 @@ export const packages: Package[] = [
   { id: 'tk-vis-b-50000',  platform: 'tiktok', category: 'TikTok Views BR', categorySlug: 'tiktok-views-br', name: 'Views TikTok 🇧🇷', quantity: 50000,  priceBRL: 79.90,  bulkServiceId: 0, inputType: 'post', discount: '20% OFF' },
   { id: 'tk-vis-b-100000', platform: 'tiktok', category: 'TikTok Views BR', categorySlug: 'tiktok-views-br', name: 'Views TikTok 🇧🇷', quantity: 100000, priceBRL: 139.90, bulkServiceId: 0, inputType: 'post', discount: '25% OFF', badge: 'loved' },
 ]
+
+export const packages: Package[] = RAW_PACKAGES.map(pkg => {
+  if (!TEST_MODE) return pkg
+  const serviceType = slugToServiceType(pkg.categorySlug)
+  return {
+    ...pkg,
+    priceBRL: 1.00,
+    quantity: TEST_QUANTITIES[serviceType] ?? 50,
+    name: `[TESTE] ${pkg.name}`,
+  }
+})
 
 export function getPackagesBySlug(slug: string): Package[] {
   return packages.filter((p) => p.categorySlug === slug)

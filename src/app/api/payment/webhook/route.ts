@@ -49,6 +49,7 @@ export async function POST(req: Request) {
       region,
       quantity,
       instagramLink,
+      username: body.username || '',
       bumpQty,
     })
  

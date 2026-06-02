@@ -20,54 +20,26 @@ function getTypeIcon(slug: string): string {
   return '⭐'
 }
 
-function buildLink(value: string, inputType: string, platform: string): string {
-  if (inputType === 'post') {
-    return value.trim()
-  }
-  const username = value.trim().replace(/^@/, '')
-  if (platform === 'tiktok') {
-    return `https://www.tiktok.com/@${username}`
-  }
-  return `https://www.instagram.com/${username}`
-}
-
-function validateInput(raw: string, inputType: string, platform: string): boolean {
-  const trimmed = raw.trim()
-  if (!trimmed) return false
-  if (inputType === 'post') {
-    if (platform === 'tiktok') return trimmed.includes('tiktok.com/')
-    return trimmed.includes('instagram.com/') || trimmed.includes('instagr.am/')
-  }
-  // profile: URL or @handle or bare username (min 2 chars)
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return true
-  const username = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
+function validateUsername(raw: string): boolean {
+  const username = raw.trim().replace(/^@/, '')
   return username.length >= 2
 }
 
-const getPlaceholder = (inputType: string, platform: string) => {
-  if (inputType === 'profile') {
-    return 'ex: @seuperfil'
-  }
-  if (platform === 'tiktok') {
-    return 'ex: https://tiktok.com/@user/video/123'
-  }
-  return 'ex: https://instagram.com/p/ABC123'
-}
-
-const getLabel = (inputType: string, platform: string) => {
-  if (inputType === 'profile') {
-    return `Perfil do ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}`
-  }
-  return `Link do ${platform === 'tiktok' ? 'vídeo TikTok' : 'post ou reel'}`
+function validatePostLink(raw: string, platform: string): boolean {
+  const trimmed = raw.trim()
+  if (!trimmed) return false
+  if (platform === 'tiktok') return trimmed.includes('tiktok.com/')
+  return trimmed.includes('instagram.com/') || trimmed.includes('instagr.am/')
 }
 
 export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
   const router = useRouter()
-  const [input, setInput] = useState('')
+  const [username, setUsername] = useState('')
+  const [postLink, setPostLink] = useState('')
   const [comments, setComments] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const usernameRef = useRef<HTMLInputElement>(null)
 
   const isPost = pkg?.inputType === 'post'
   const isTikTok = pkg?.platform === 'tiktok'
@@ -75,10 +47,11 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
 
   useEffect(() => {
     if (pkg) {
-      setInput('')
+      setUsername('')
+      setPostLink('')
       setComments('')
       setError('')
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => usernameRef.current?.focus(), 100)
     }
   }, [pkg])
 
@@ -93,20 +66,32 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
 
   if (!pkg) return null
 
+  const platform = pkg.platform ?? 'instagram'
   const commentLines = comments.split('\n').filter(c => c.trim())
   const commentsFilled = commentLines.length
   const commentsNeeded = pkg.quantity
+
+  const postPlaceholder = isTikTok
+    ? 'ex: https://tiktok.com/@user/video/123'
+    : 'ex: https://instagram.com/p/ABC123'
+
+  const isSubmitDisabled =
+    loading ||
+    !validateUsername(username) ||
+    (isPost && !validatePostLink(postLink, platform)) ||
+    (isComments && commentsFilled !== commentsNeeded)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!validateInput(input, pkg.inputType, pkg.platform ?? 'instagram')) {
-      setError(
-        isPost
-          ? `Cole o link direto do ${isTikTok ? 'vídeo TikTok' : 'post ou reel do Instagram'}`
-          : `Informe o @ do usuário ou o link do perfil`
-      )
+    if (!validateUsername(username)) {
+      setError('Informe o @ do seu perfil')
+      return
+    }
+
+    if (isPost && !validatePostLink(postLink, platform)) {
+      setError(`Cole o link direto do ${isTikTok ? 'vídeo TikTok' : 'post ou reel do Instagram'}`)
       return
     }
 
@@ -117,15 +102,14 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
 
     setLoading(true)
 
-    const normalized = buildLink(input, pkg.inputType, pkg.platform ?? 'instagram')
-
     try {
       const res = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           packageId: pkg.id,
-          instagramInput: normalized,
+          username: username.trim(),
+          postLink: isPost ? postLink.trim() : undefined,
           comments: isComments ? comments.trim() : undefined,
         }),
       })
@@ -192,28 +176,20 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
             <span className="text-base font-bold text-white ml-2 flex-shrink-0">{formatBRL(pkg.priceBRL)}</span>
           </div>
 
-          {/* Link / Username input */}
+          {/* Always: @ do perfil */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              {isPost ? (
-                <span className="flex items-center gap-1.5">
-                  <LinkIcon className="h-4 w-4 text-purple-400" />
-                  {getLabel('post', pkg.platform ?? 'instagram')}
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5">
-                  <AtSign className="h-4 w-4 text-purple-400" />
-                  {getLabel('profile', pkg.platform ?? 'instagram')}
-                </span>
-              )}
+              <span className="flex items-center gap-1.5">
+                <AtSign className="h-4 w-4 text-purple-400" />
+                Seu perfil {isTikTok ? 'TikTok' : 'Instagram'}
+              </span>
             </label>
-
             <input
-              ref={inputRef}
+              ref={usernameRef}
               type="text"
-              value={input}
-              onChange={(e) => { setInput(e.target.value); setError('') }}
-              placeholder={getPlaceholder(pkg.inputType, pkg.platform ?? 'instagram')}
+              value={username}
+              onChange={(e) => { setUsername(e.target.value); setError('') }}
+              placeholder="ex: @seuperfil"
               disabled={loading}
               autoCapitalize="none"
               autoCorrect="off"
@@ -222,19 +198,41 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
             />
           </div>
 
-          {/* Comments textarea (only for comentarios packages) */}
+          {/* Post link (likes, views, comments) */}
+          {isPost && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <span className="flex items-center gap-1.5">
+                  <LinkIcon className="h-4 w-4 text-purple-400" />
+                  Link do {isTikTok ? 'vídeo TikTok' : 'post ou reel'}
+                </span>
+              </label>
+              <input
+                type="text"
+                value={postLink}
+                onChange={(e) => { setPostLink(e.target.value); setError('') }}
+                placeholder={postPlaceholder}
+                disabled={loading}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
+              />
+            </div>
+          )}
+
+          {/* Comments textarea */}
           {isComments && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="h-4 w-4 text-purple-400" />
-                  Escreva seus comentários (1 por linha)
+                  Seus comentários (1 por linha)
                 </span>
               </label>
               <textarea
                 value={comments}
                 onChange={(e) => {
-                  // Limit to commentsNeeded lines
                   const lines = e.target.value.split('\n')
                   if (lines.length <= commentsNeeded) {
                     setComments(e.target.value)
@@ -268,7 +266,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !input.trim() || (isComments && commentsFilled !== commentsNeeded)}
+            disabled={isSubmitDisabled}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 hover:from-purple-400 hover:to-purple-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

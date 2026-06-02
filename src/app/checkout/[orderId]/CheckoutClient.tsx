@@ -198,6 +198,7 @@ export default function CheckoutClient({
           region,
           quantity: String(quantity),
           instagramLink,
+          username: instagramUser,
           bumpQty: String(finalBumpQty),
           ...(comments ? { comments } : {}),
         })
@@ -260,6 +261,7 @@ export default function CheckoutClient({
           region,
           quantity,
           instagramLink,
+          username: instagramUser,
           bumpQty,
           comments: comments || null,
         }),

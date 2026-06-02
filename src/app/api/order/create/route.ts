@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isPreviewMode, makePreviewOrderId } from '@/lib/config'
-import { validateSocialInput } from '@/lib/utils'
 import { getPackageById } from '@/data/packages'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { packageId, instagramInput, comments } = body
+    const { packageId, username, postLink, comments } = body
 
-    if (!packageId || !instagramInput) {
+    if (!packageId || !username) {
       return NextResponse.json({ success: false, error: 'Dados incompletos' }, { status: 400 })
     }
 
@@ -17,22 +16,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Pacote não encontrado' }, { status: 404 })
     }
 
-    const validation = validateSocialInput(instagramInput, pkg.platform ?? 'instagram')
-    if (!validation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Link ou usuário inválido' },
-        { status: 400 }
-      )
+    const rawUser = username.trim().replace(/^@/, '')
+    if (rawUser.length < 2) {
+      return NextResponse.json({ success: false, error: 'Usuário inválido' }, { status: 400 })
+    }
+
+    const instagramUser = `@${rawUser}`
+
+    // Build the link that goes to BulkFollows:
+    // - For post types (likes/views/comments): use the postLink provided
+    // - For profile types (followers/stories): build from username
+    const platform = pkg.platform ?? 'instagram'
+    let instagramLink: string
+    if (pkg.inputType === 'post' && postLink?.trim()) {
+      instagramLink = postLink.trim()
+    } else {
+      instagramLink = platform === 'tiktok'
+        ? `https://www.tiktok.com/@${rawUser}`
+        : `https://www.instagram.com/${rawUser}/`
     }
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────
     if (isPreviewMode) {
-      const orderId = makePreviewOrderId(packageId, validation.user)
-      return NextResponse.json({
-        success: true,
-        orderId,
-        preview: true,
-      })
+      const orderId = makePreviewOrderId(packageId, instagramUser)
+      return NextResponse.json({ success: true, orderId, preview: true })
     }
 
     // ── MODO PRODUÇÃO ─────────────────────────────────────────────────────────
@@ -53,8 +60,8 @@ export async function POST(req: NextRequest) {
       category: pkg.category,
       categorySlug: pkg.categorySlug,
       quantity: pkg.quantity,
-      instagramUser: validation.user,
-      instagramLink: validation.link,
+      instagramUser,
+      instagramLink,
       priceUSD: 0,
       priceBRL: pkg.priceBRL,
       status: 'PENDING_PAYMENT',

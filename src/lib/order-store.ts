@@ -23,6 +23,7 @@ export interface StoredOrderData {
   region: string
   quantity: number
   instagramLink: string
+  username: string
   bumpQty: number
   comments?: string
 }

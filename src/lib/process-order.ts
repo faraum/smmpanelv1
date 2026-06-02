@@ -8,6 +8,7 @@ export interface OrderPayload {
   region: 'global' | 'brazil'
   quantity: number
   instagramLink: string
+  username: string
   bumpQty?: number
   comments?: string
 }
@@ -25,26 +26,41 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
   try {
     const serviceId = getServiceId(order.platform, order.serviceType, order.region)
 
+    console.log('=== PROCESSANDO PEDIDO ===')
+    console.log('Platform:', order.platform)
+    console.log('ServiceType:', order.serviceType)
+    console.log('Region:', order.region)
+    console.log('Quantity:', order.quantity)
+    console.log('Link:', order.instagramLink)
+    console.log('Username:', order.username)
+    console.log('Comments:', order.comments ? `SIM (${order.comments.split('\n').length} linhas)` : 'NÃO')
+    console.log('ServiceId encontrado:', serviceId)
+
     if (!serviceId) {
       const msg = `Serviço não mapeado: ${order.platform}/${order.serviceType}/${order.region}`
       console.error(`[BulkFollows] ${msg}`)
       return { success: false, error: msg }
     }
 
-    console.log(`[BulkFollows] Serviço: ${order.platform} ${order.serviceType} ${order.region} → ID: ${serviceId}`)
-
     const client = getBulkFollowsClient()
     const result = await client.createOrder(serviceId, order.instagramLink, order.quantity, order.comments)
 
     console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 
-    // Process bump followers as a separate order (non-critical)
+    // Process bump followers as separate order using the profile link (non-critical)
     if (order.bumpQty && order.bumpQty > 0) {
       try {
         const bumpServiceId = getServiceId(order.platform, 'followers', 'global')
-        if (bumpServiceId) {
-          await client.createOrder(bumpServiceId, order.instagramLink, order.bumpQty)
-          console.log(`[BulkFollows] ✅ Bump criado! qty:${order.bumpQty}`)
+        const rawUser = (order.username || '').replace(/^@/, '')
+        const bumpLink = order.platform === 'tiktok'
+          ? `https://www.tiktok.com/@${rawUser}`
+          : `https://www.instagram.com/${rawUser}/`
+
+        if (bumpServiceId && rawUser) {
+          await client.createOrder(bumpServiceId, bumpLink, order.bumpQty)
+          console.log(`[BulkFollows] ✅ Bump criado! qty:${order.bumpQty} link:${bumpLink}`)
+        } else {
+          console.warn(`[BulkFollows] Bump ignorado — bumpServiceId:${bumpServiceId} rawUser:"${rawUser}"`)
         }
       } catch (bumpErr) {
         console.error('[BulkFollows] Erro no bump (não crítico):', bumpErr)
