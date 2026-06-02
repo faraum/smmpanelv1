@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     const quantity    = Number(body.quantity) || 100
     const bumpQty     = Number(body.bumpQty)  || 0
     const instagramLink = body.instagramLink || ''
+    const comments    = body.comments    || null
  
     // externalReference must be ≤ 100 chars — use orderId directly
     const externalReference = orderId
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
       quantity,
       instagramLink,
       bumpQty,
+      comments: comments ?? undefined,
     })
  
     const charge = await createPixCharge({

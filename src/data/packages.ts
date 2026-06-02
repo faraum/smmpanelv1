@@ -36,8 +36,9 @@ export const instagramSubCategories: Category[] = [
   { name: 'Curtidas Mundiais',       slug: 'curtidas-mundiais',      icon: '💖', inputType: 'post',    platform: 'instagram' },
   { name: 'Curtidas BR',             slug: 'curtidas-brasileiras',   icon: '🇧🇷', inputType: 'post',    platform: 'instagram' },
   { name: 'Views Reels',             slug: 'visualizacoes-reels',    icon: '🎬', inputType: 'post',    platform: 'instagram' },
-  { name: 'Views Stories',           slug: 'views-stories',          icon: '👁️', inputType: 'post',    platform: 'instagram' },
+  { name: 'Views Stories',           slug: 'views-stories',          icon: '👁️', inputType: 'profile', platform: 'instagram' },
   { name: 'Comentários BR',          slug: 'comentarios-brasileiros',icon: '💬', inputType: 'post',    platform: 'instagram' },
+  { name: 'Comentários Mundiais',    slug: 'comentarios-mundiais',   icon: '🌍', inputType: 'post',    platform: 'instagram' },
 ]
 
 export const tiktokSubCategories: Category[] = [
@@ -110,12 +111,12 @@ export const packages: Package[] = [
   { id: 'vis-1000000', platform: 'instagram', category: 'Visualizações Reels', categorySlug: 'visualizacoes-reels', name: 'Visualizações Reels', quantity: 1000000, priceBRL: 139.99, bulkServiceId: 0, inputType: 'post', discount: '40% OFF' },
 
   // ── Views Stories (NOVO) ──────────────────────────────────────────────────
-  { id: 'sto-100',   platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 100,   priceBRL: 4.90,  bulkServiceId: 0, inputType: 'post' },
-  { id: 'sto-500',   platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 500,   priceBRL: 9.90,  bulkServiceId: 0, inputType: 'post', discount: '10% OFF' },
-  { id: 'sto-1000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 1000,  priceBRL: 14.90, bulkServiceId: 0, inputType: 'post', discount: '15% OFF', badge: 'popular', popular: true },
-  { id: 'sto-2000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 2000,  priceBRL: 24.90, bulkServiceId: 0, inputType: 'post', discount: '20% OFF' },
-  { id: 'sto-5000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 5000,  priceBRL: 49.90, bulkServiceId: 0, inputType: 'post', discount: '25% OFF' },
-  { id: 'sto-10000', platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 10000, priceBRL: 89.90, bulkServiceId: 0, inputType: 'post', discount: '35% OFF', badge: 'loved' },
+  { id: 'sto-100',   platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 100,   priceBRL: 4.90,  bulkServiceId: 0, inputType: 'profile' },
+  { id: 'sto-500',   platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 500,   priceBRL: 9.90,  bulkServiceId: 0, inputType: 'profile', discount: '10% OFF' },
+  { id: 'sto-1000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 1000,  priceBRL: 14.90, bulkServiceId: 0, inputType: 'profile', discount: '15% OFF', badge: 'popular', popular: true },
+  { id: 'sto-2000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 2000,  priceBRL: 24.90, bulkServiceId: 0, inputType: 'profile', discount: '20% OFF' },
+  { id: 'sto-5000',  platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 5000,  priceBRL: 49.90, bulkServiceId: 0, inputType: 'profile', discount: '25% OFF' },
+  { id: 'sto-10000', platform: 'instagram', category: 'Views Stories', categorySlug: 'views-stories', name: 'Views Stories Instagram 👁️', quantity: 10000, priceBRL: 89.90, bulkServiceId: 0, inputType: 'profile', discount: '35% OFF', badge: 'loved' },
 
   // ── Comentários Brasileiros ───────────────────────────────────────────────
   { id: 'com-5',   platform: 'instagram', category: 'Comentários Brasileiros', categorySlug: 'comentarios-brasileiros', name: 'Comentários Brasileiros', quantity: 5,   priceBRL: 5.90,  bulkServiceId: 0, inputType: 'post' },
@@ -124,6 +125,14 @@ export const packages: Package[] = [
   { id: 'com-30',  platform: 'instagram', category: 'Comentários Brasileiros', categorySlug: 'comentarios-brasileiros', name: 'Comentários Brasileiros', quantity: 30,  priceBRL: 30.90, bulkServiceId: 0, inputType: 'post', discount: '20% OFF' },
   { id: 'com-50',  platform: 'instagram', category: 'Comentários Brasileiros', categorySlug: 'comentarios-brasileiros', name: 'Comentários Brasileiros', quantity: 50,  priceBRL: 44.90, bulkServiceId: 0, inputType: 'post', discount: '25% OFF' },
   { id: 'com-100', platform: 'instagram', category: 'Comentários Brasileiros', categorySlug: 'comentarios-brasileiros', name: 'Comentários Brasileiros', quantity: 100, priceBRL: 79.90, bulkServiceId: 0, inputType: 'post', discount: '30% OFF', badge: 'loved' },
+
+  // ── Comentários Mundiais ──────────────────────────────────────────────────
+  { id: 'com-g-5',   platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 5,   priceBRL: 4.90,  bulkServiceId: 476, inputType: 'post' },
+  { id: 'com-g-10',  platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 10,  priceBRL: 8.90,  bulkServiceId: 476, inputType: 'post', discount: '10% OFF' },
+  { id: 'com-g-20',  platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 20,  priceBRL: 16.90, bulkServiceId: 476, inputType: 'post', discount: '15% OFF', badge: 'popular', popular: true },
+  { id: 'com-g-30',  platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 30,  priceBRL: 24.90, bulkServiceId: 476, inputType: 'post', discount: '20% OFF' },
+  { id: 'com-g-50',  platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 50,  priceBRL: 39.90, bulkServiceId: 476, inputType: 'post', discount: '25% OFF' },
+  { id: 'com-g-100', platform: 'instagram', category: 'Comentários Mundiais', categorySlug: 'comentarios-mundiais', name: 'Comentários Mundiais', quantity: 100, priceBRL: 69.90, bulkServiceId: 476, inputType: 'post', discount: '30% OFF', badge: 'loved' },
 
   // ══ TIKTOK ════════════════════════════════════════════════════════════════════
 

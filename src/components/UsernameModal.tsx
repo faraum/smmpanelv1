@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Package } from '@/data/packages'
 import { formatBRL, formatQuantity } from '@/lib/utils'
-import { X, AtSign, Link as LinkIcon, Loader2, AlertCircle } from 'lucide-react'
+import { X, AtSign, Link as LinkIcon, Loader2, AlertCircle, MessageSquare } from 'lucide-react'
 
 interface UsernameModalProps {
   pkg: Package | null
@@ -20,41 +20,63 @@ function getTypeIcon(slug: string): string {
   return '⭐'
 }
 
-function normalizeInstagramInput(raw: string, isPost: boolean, isTikTok: boolean): string {
-  const trimmed = raw.trim()
-  // Already a URL
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
-  if (isPost) return trimmed
-  // Handle @username or bare username
-  const username = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
-  return isTikTok
-    ? `https://www.tiktok.com/@${username}`
-    : `https://www.instagram.com/${username}`
+function buildLink(value: string, inputType: string, platform: string): string {
+  if (inputType === 'post') {
+    return value.trim()
+  }
+  const username = value.trim().replace(/^@/, '')
+  if (platform === 'tiktok') {
+    return `https://www.tiktok.com/@${username}`
+  }
+  return `https://www.instagram.com/${username}`
 }
 
-function validateInput(raw: string, isPost: boolean, isTikTok: boolean): boolean {
+function validateInput(raw: string, inputType: string, platform: string): boolean {
   const trimmed = raw.trim()
   if (!trimmed) return false
-  if (isPost) {
-    if (isTikTok) return trimmed.includes('tiktok.com')
-    return trimmed.includes('instagram.com')
+  if (inputType === 'post') {
+    if (platform === 'tiktok') return trimmed.includes('tiktok.com/')
+    return trimmed.includes('instagram.com/') || trimmed.includes('instagr.am/')
   }
-  // Profile: URL or @handle or bare username (min 1 char)
+  // profile: URL or @handle or bare username (min 2 chars)
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return true
   const username = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed
-  return username.length >= 1
+  return username.length >= 2
+}
+
+const getPlaceholder = (inputType: string, platform: string) => {
+  if (inputType === 'profile') {
+    return 'ex: @seuperfil'
+  }
+  if (platform === 'tiktok') {
+    return 'ex: https://tiktok.com/@user/video/123'
+  }
+  return 'ex: https://instagram.com/p/ABC123'
+}
+
+const getLabel = (inputType: string, platform: string) => {
+  if (inputType === 'profile') {
+    return `Perfil do ${platform === 'tiktok' ? 'TikTok' : 'Instagram'}`
+  }
+  return `Link do ${platform === 'tiktok' ? 'vídeo TikTok' : 'post ou reel'}`
 }
 
 export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
   const router = useRouter()
   const [input, setInput] = useState('')
+  const [comments, setComments] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const isPost = pkg?.inputType === 'post'
+  const isTikTok = pkg?.platform === 'tiktok'
+  const isComments = !!pkg?.categorySlug?.includes('comentarios')
+
   useEffect(() => {
     if (pkg) {
       setInput('')
+      setComments('')
       setError('')
       setTimeout(() => inputRef.current?.focus(), 100)
     }
@@ -71,52 +93,41 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
 
   if (!pkg) return null
 
-  const isPost = pkg.inputType === 'post'
-  const isTikTok = pkg.platform === 'tiktok'
-  const platformLabel = isTikTok ? 'TikTok' : 'Instagram'
-
-  const getPlaceholder = () => {
-    if (isPost) {
-      return isTikTok
-        ? 'https://www.tiktok.com/@usuario/video/...'
-        : 'https://www.instagram.com/p/...'
-    }
-    return 'ex: @seuperfil'
-  }
-
-  const getInputHint = () => {
-    if (isPost) {
-      return isTikTok
-        ? 'Cole o link do vídeo TikTok que deseja impulsionar'
-        : 'Cole o link do post ou reel que deseja impulsionar'
-    }
-    return isTikTok
-      ? 'Digite @usuario ou o link do perfil TikTok'
-      : 'Digite @seuperfil ou o link completo do perfil'
-  }
+  const commentLines = comments.split('\n').filter(c => c.trim())
+  const commentsFilled = commentLines.length
+  const commentsNeeded = pkg.quantity
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!validateInput(input, isPost, isTikTok)) {
+    if (!validateInput(input, pkg.inputType, pkg.platform ?? 'instagram')) {
       setError(
         isPost
-          ? `Cole o link direto do ${isTikTok ? 'vídeo TikTok' : 'post, reel ou story do Instagram'}`
-          : `Informe o @ do usuário ou o link do perfil ${platformLabel}`
+          ? `Cole o link direto do ${isTikTok ? 'vídeo TikTok' : 'post ou reel do Instagram'}`
+          : `Informe o @ do usuário ou o link do perfil`
       )
+      return
+    }
+
+    if (isComments && commentsFilled !== commentsNeeded) {
+      setError(`Escreva exatamente ${commentsNeeded} comentário${commentsNeeded > 1 ? 's' : ''} (${commentsFilled}/${commentsNeeded})`)
       return
     }
 
     setLoading(true)
 
-    const normalized = normalizeInstagramInput(input, isPost, isTikTok)
+    const normalized = buildLink(input, pkg.inputType, pkg.platform ?? 'instagram')
 
     try {
       const res = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, instagramInput: normalized }),
+        body: JSON.stringify({
+          packageId: pkg.id,
+          instagramInput: normalized,
+          comments: isComments ? comments.trim() : undefined,
+        }),
       })
 
       const data = await res.json()
@@ -181,18 +192,18 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
             <span className="text-base font-bold text-white ml-2 flex-shrink-0">{formatBRL(pkg.priceBRL)}</span>
           </div>
 
-          {/* Input */}
+          {/* Link / Username input */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               {isPost ? (
                 <span className="flex items-center gap-1.5">
                   <LinkIcon className="h-4 w-4 text-purple-400" />
-                  Link do {isTikTok ? 'vídeo TikTok' : 'post ou reel'}
+                  {getLabel('post', pkg.platform ?? 'instagram')}
                 </span>
               ) : (
                 <span className="flex items-center gap-1.5">
                   <AtSign className="h-4 w-4 text-purple-400" />
-                  Perfil do {platformLabel}
+                  {getLabel('profile', pkg.platform ?? 'instagram')}
                 </span>
               )}
             </label>
@@ -202,23 +213,52 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
               type="text"
               value={input}
               onChange={(e) => { setInput(e.target.value); setError('') }}
-              placeholder={getPlaceholder()}
+              placeholder={getPlaceholder(pkg.inputType, pkg.platform ?? 'instagram')}
               disabled={loading}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
             />
-
-            <p className="mt-1.5 text-xs text-gray-500">{getInputHint()}</p>
-
-            {error && (
-              <div className="mt-2 flex items-start gap-1.5 text-red-400 text-xs">
-                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
           </div>
+
+          {/* Comments textarea (only for comentarios packages) */}
+          {isComments && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 text-purple-400" />
+                  Escreva seus comentários (1 por linha)
+                </span>
+              </label>
+              <textarea
+                value={comments}
+                onChange={(e) => {
+                  // Limit to commentsNeeded lines
+                  const lines = e.target.value.split('\n')
+                  if (lines.length <= commentsNeeded) {
+                    setComments(e.target.value)
+                    setError('')
+                  }
+                }}
+                placeholder={'Que foto linda!\nParabéns pelo conteúdo!\nAmei demais!'}
+                rows={Math.min(commentsNeeded, 10)}
+                disabled={loading}
+                style={{ resize: 'none' }}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50"
+              />
+              <p className={`mt-1 text-xs ${commentsFilled === commentsNeeded ? 'text-emerald-400' : 'text-gray-400'}`}>
+                {commentsFilled} / {commentsNeeded} comentários escritos
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-start gap-1.5 text-red-400 text-xs">
+              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
           {/* Security note */}
           <div className="rounded-lg bg-blue-500/5 border border-blue-500/10 p-3 text-xs text-blue-300">
@@ -228,7 +268,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || (isComments && commentsFilled !== commentsNeeded)}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 hover:from-purple-400 hover:to-purple-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

@@ -42,13 +42,17 @@ class BulkFollowsClient {
     return this.request<BulkService[]>({ action: 'services' })
   }
 
-  async createOrder(serviceId: number, link: string, quantity: number): Promise<{ order: number }> {
-    return this.request<{ order: number }>({
+  async createOrder(serviceId: number, link: string, quantity: number, comments?: string): Promise<{ order: number }> {
+    const params: Record<string, string | number> = {
       action: 'add',
       service: serviceId,
       link,
       quantity,
-    })
+    }
+    if (comments) {
+      params.comments = comments
+    }
+    return this.request<{ order: number }>(params)
   }
 
   async getOrderStatus(orderId: number): Promise<BulkOrderStatus> {

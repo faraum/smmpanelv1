@@ -111,7 +111,7 @@ export default function Home() {
             </p>
 
             <p className="mb-8 text-sm font-medium" style={{ color: '#8B5CF6' }}>
-              Crie o hype que você merece
+              Mais seguidores, mais resultados.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-2">

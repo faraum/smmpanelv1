@@ -24,6 +24,7 @@ export interface StoredOrderData {
   quantity: number
   instagramLink: string
   bumpQty: number
+  comments?: string
 }
 
 // Abbreviation maps

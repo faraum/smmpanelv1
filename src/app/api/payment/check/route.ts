@@ -18,6 +18,7 @@ export async function GET(req: Request) {
     const quantity      = searchParams.get('quantity')
     const instagramLink = searchParams.get('instagramLink')
     const bumpQty       = searchParams.get('bumpQty')
+    const comments      = searchParams.get('comments')
 
     if (!chargeId) {
       return NextResponse.json({ error: 'chargeId obrigatório' }, { status: 400 })
@@ -45,11 +46,12 @@ export async function GET(req: Request) {
       const result = await processOrderAfterPayment({
         orderId,
         platform: platform as 'instagram' | 'tiktok',
-        serviceType: serviceType as 'followers' | 'likes' | 'views' | 'comments',
+        serviceType: serviceType as 'followers' | 'likes' | 'views' | 'stories' | 'comments',
         region: region as 'global' | 'brazil',
         quantity: parseInt(quantity),
         instagramLink,
         bumpQty: parseInt(bumpQty || '0'),
+        comments: comments || undefined,
       })
 
       return NextResponse.json({

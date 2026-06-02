@@ -4,11 +4,12 @@ import { getServiceId } from './service-ids'
 export interface OrderPayload {
   orderId: string
   platform: 'instagram' | 'tiktok'
-  serviceType: 'followers' | 'likes' | 'views' | 'comments'
+  serviceType: 'followers' | 'likes' | 'views' | 'stories' | 'comments'
   region: 'global' | 'brazil'
   quantity: number
   instagramLink: string
   bumpQty?: number
+  comments?: string
 }
 
 export async function processOrderAfterPayment(order: OrderPayload): Promise<{
@@ -33,7 +34,7 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
     console.log(`[BulkFollows] Serviço: ${order.platform} ${order.serviceType} ${order.region} → ID: ${serviceId}`)
 
     const client = getBulkFollowsClient()
-    const result = await client.createOrder(serviceId, order.instagramLink, order.quantity)
+    const result = await client.createOrder(serviceId, order.instagramLink, order.quantity, order.comments)
 
     console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 

@@ -22,6 +22,7 @@ interface CheckoutClientProps {
   instagramUser: string
   instagramLink: string
   categorySlug: string
+  comments?: string
 }
 
 interface BumpOffer {
@@ -50,7 +51,7 @@ function getCategoryKey(slug: string): string {
   return 'outros'
 }
 
-type ServiceType = 'followers' | 'likes' | 'views' | 'comments'
+type ServiceType = 'followers' | 'likes' | 'views' | 'stories' | 'comments'
 type Region = 'global' | 'brazil'
 
 function parseCategory(slug: string): {
@@ -64,8 +65,9 @@ function parseCategory(slug: string): {
     'curtidas-mundiais':       { platform: 'instagram', serviceType: 'likes',     region: 'global' },
     'curtidas-brasileiras':    { platform: 'instagram', serviceType: 'likes',     region: 'brazil' },
     'visualizacoes-reels':     { platform: 'instagram', serviceType: 'views',     region: 'global' },
-    'views-stories':           { platform: 'instagram', serviceType: 'views',     region: 'global' },
+    'views-stories':           { platform: 'instagram', serviceType: 'stories',   region: 'global' },
     'comentarios-brasileiros': { platform: 'instagram', serviceType: 'comments',  region: 'brazil' },
+    'comentarios-mundiais':    { platform: 'instagram', serviceType: 'comments',  region: 'global' },
     'tiktok-seguidores-global': { platform: 'tiktok', serviceType: 'followers', region: 'global' },
     'tiktok-seguidores-br':     { platform: 'tiktok', serviceType: 'followers', region: 'brazil' },
     'tiktok-curtidas-global':   { platform: 'tiktok', serviceType: 'likes',     region: 'global' },
@@ -125,6 +127,7 @@ export default function CheckoutClient({
   instagramUser,
   instagramLink,
   categorySlug,
+  comments,
 }: CheckoutClientProps) {
   const router = useRouter()
 
@@ -196,6 +199,7 @@ export default function CheckoutClient({
           quantity: String(quantity),
           instagramLink,
           bumpQty: String(finalBumpQty),
+          ...(comments ? { comments } : {}),
         })
         const res = await fetch(`/api/payment/check?${params.toString()}`)
         const data = await res.json()
@@ -257,6 +261,7 @@ export default function CheckoutClient({
           quantity,
           instagramLink,
           bumpQty,
+          comments: comments || null,
         }),
       })
       const data = await res.json()

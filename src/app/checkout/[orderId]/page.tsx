@@ -21,6 +21,7 @@ interface OrderSummary {
   pixCode: string
   pixQrCode: string
   categorySlug: string
+  comments?: string
 }
 
 async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
@@ -67,6 +68,7 @@ async function getOrderSummary(orderId: string): Promise<OrderSummary | null> {
       pixCode: o.pixCode || '',
       pixQrCode: o.pixQrCode || '',
       categorySlug: o.categorySlug || 'seguidores-mundiais',
+      comments: o.comments || undefined,
     }
   } catch {
     return null
@@ -118,6 +120,7 @@ export default async function CheckoutPage({ params }: Props) {
             instagramUser={summary.instagramUser}
             instagramLink={summary.instagramLink}
             categorySlug={summary.categorySlug}
+            comments={summary.comments}
           />
         </div>
       </main>

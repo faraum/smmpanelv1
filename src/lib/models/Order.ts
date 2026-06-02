@@ -13,6 +13,8 @@ export interface IOrderDocument extends Document {
   priceUSD: number
   priceBRL: number
   status: OrderStatus
+  categorySlug?: string
+  comments?: string
   pixCode?: string
   pixQrCode?: string
   paidAt?: Date
@@ -37,6 +39,8 @@ const OrderSchema = new Schema<IOrderDocument>(
       enum: ['PENDING_PAYMENT', 'PAID', 'PROCESSING', 'COMPLETED', 'FAILED', 'REFUNDED'],
       default: 'PENDING_PAYMENT',
     },
+    categorySlug: { type: String, default: null },
+    comments: { type: String, default: null },
     pixCode: { type: String, default: null },
     pixQrCode: { type: String, default: null },
     paidAt: { type: Date, default: null },

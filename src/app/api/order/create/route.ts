@@ -1,28 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isPreviewMode, makePreviewOrderId } from '@/lib/config'
-import { validateInstagramInput } from '@/lib/utils'
+import { validateSocialInput } from '@/lib/utils'
 import { getPackageById } from '@/data/packages'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { packageId, instagramInput } = body
+    const { packageId, instagramInput, comments } = body
 
     if (!packageId || !instagramInput) {
       return NextResponse.json({ success: false, error: 'Dados incompletos' }, { status: 400 })
     }
 
-    const validation = validateInstagramInput(instagramInput)
-    if (!validation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Link ou usuário do Instagram inválido' },
-        { status: 400 }
-      )
-    }
-
     const pkg = getPackageById(packageId)
     if (!pkg) {
       return NextResponse.json({ success: false, error: 'Pacote não encontrado' }, { status: 404 })
+    }
+
+    const validation = validateSocialInput(instagramInput, pkg.platform ?? 'instagram')
+    if (!validation.valid) {
+      return NextResponse.json(
+        { success: false, error: 'Link ou usuário inválido' },
+        { status: 400 }
+      )
     }
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────
@@ -51,12 +51,14 @@ export async function POST(req: NextRequest) {
       serviceId: pkg.bulkServiceId,
       serviceName: pkg.name,
       category: pkg.category,
+      categorySlug: pkg.categorySlug,
       quantity: pkg.quantity,
       instagramUser: validation.user,
       instagramLink: validation.link,
       priceUSD: 0,
       priceBRL: pkg.priceBRL,
       status: 'PENDING_PAYMENT',
+      comments: comments || null,
       pixCode,
       pixQrCode,
     })
