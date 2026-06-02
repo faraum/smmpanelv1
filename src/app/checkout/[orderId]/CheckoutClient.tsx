@@ -158,9 +158,10 @@ export default function CheckoutClient({
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
 
   // ── Derived
+  const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === 'true'
   const purchasedCat = getCategoryKey(categorySlug)
   const bumpTotal = added.reduce((s, i) => s + i.price, 0)
-  const total = priceBRL + bumpTotal
+  const total = TEST_MODE ? 1.00 : priceBRL + bumpTotal
   const expired = paymentTimer === 0
 
   // ── Discount timer (bump phase)
