@@ -3,76 +3,64 @@ import { getChargeStatus } from '@/lib/activepayments'
 import { processOrderAfterPayment } from '@/lib/process-order'
 
 // In-memory idempotency guard — prevents double-processing within the same instance
-const processedCharges = new Set<string>()
+const processed = new Set<string>()
 
-export async function GET(req: Request) {
+export async function POST(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const chargeId = searchParams.get('chargeId')
-
-    // Order data (passed by the checkout polling so we can dispatch BulkFollows)
-    const orderId       = searchParams.get('orderId')
-    const platform      = searchParams.get('platform')
-    const serviceType   = searchParams.get('serviceType')
-    const region        = searchParams.get('region')
-    const quantity      = searchParams.get('quantity')
-    const instagramLink = searchParams.get('instagramLink')
-    const username      = searchParams.get('username')
-    const bumpQty       = searchParams.get('bumpQty')
-    const comments      = searchParams.get('comments')
+    const body = await req.json()
+    const { chargeId, orderData } = body
 
     if (!chargeId) {
       return NextResponse.json({ error: 'chargeId obrigatório' }, { status: 400 })
     }
 
-    const hasPaymentKeys =
+    const hasKeys =
       process.env.ACTIVEPAYMENTS_PUBLIC_KEY && process.env.ACTIVEPAYMENTS_SECRET_KEY
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────
-    if (!hasPaymentKeys || chargeId.startsWith('preview-')) {
-      return NextResponse.json({ chargeId, status: 'pending', preview: true })
+    if (!hasKeys || String(chargeId).startsWith('preview-')) {
+      return NextResponse.json({ status: 'pending', preview: true })
     }
 
     // ── MODO PRODUÇÃO ─────────────────────────────────────────────────────────
     const charge = await getChargeStatus(chargeId)
 
-    // If paid and not yet processed by this polling path → dispatch BulkFollows
-    if (
-      charge.status === 'paid' &&
-      !processedCharges.has(chargeId) &&
-      orderId && platform && serviceType && region && quantity && instagramLink
-    ) {
-      processedCharges.add(chargeId)
+    if (charge.status === 'paid' && !processed.has(chargeId) && orderData) {
+      processed.add(chargeId)
+
+      console.log('💰 Pagamento confirmado! Criando pedido na BulkFollows...', {
+        platform: orderData.platform,
+        serviceType: orderData.serviceType,
+        region: orderData.region,
+        quantity: orderData.quantity,
+        username: orderData.username,
+        postLink: orderData.postLink,
+      })
 
       const result = await processOrderAfterPayment({
-        orderId,
-        platform: platform as 'instagram' | 'tiktok',
-        serviceType: serviceType as 'followers' | 'likes' | 'views' | 'stories' | 'comments',
-        region: region as 'global' | 'brazil',
-        quantity: parseInt(quantity),
-        instagramLink,
-        username: username || '',
-        bumpQty: parseInt(bumpQty || '0'),
-        comments: comments || undefined,
+        orderId: chargeId,
+        platform: orderData.platform,
+        serviceType: orderData.serviceType,
+        region: orderData.region,
+        quantity: orderData.quantity,
+        username: orderData.username || '',
+        instagramLink: orderData.postLink || orderData.instagramLink || '',
+        comments: orderData.comments || undefined,
+        orderBumps: orderData.orderBumps || [],
       })
 
       return NextResponse.json({
-        chargeId: charge.chargeId,
-        status: charge.status,
-        paidAt: charge.paidAt || null,
+        status: 'paid',
         bulkOrderCreated: result.success,
         bulkOrderId: result.bulkOrderId,
+        bulkError: result.error,
       })
     }
 
-    return NextResponse.json({
-      chargeId: charge.chargeId,
-      status: charge.status,
-      paidAt: charge.paidAt || null,
-    })
+    return NextResponse.json({ status: charge.status })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erro ao consultar pagamento'
-    console.error('Erro ao consultar status:', message)
+    console.error('Erro no check:', message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

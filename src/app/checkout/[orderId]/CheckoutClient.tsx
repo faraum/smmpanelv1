@@ -149,7 +149,6 @@ export default function CheckoutClient({
   // ── Payment state
   const [chargeId, setChargeId] = useState<string | null>(null)
   const [isPreviewPayment, setIsPreviewPayment] = useState(false)
-  const [finalBumpQty, setFinalBumpQty] = useState(0)
   const [pixCode, setPixCode] = useState(initialPixCode)
   const [pixQrCode, setPixQrCode] = useState(initialPixQrCode)
   const [copied, setCopied] = useState(false)
@@ -191,22 +190,27 @@ export default function CheckoutClient({
 
     const poll = async () => {
       try {
-        const params = new URLSearchParams({
-          chargeId,
-          orderId,
-          platform,
-          serviceType,
-          region,
-          quantity: String(quantity),
-          instagramLink,
-          username: instagramUser,
-          bumpQty: String(finalBumpQty),
-          ...(comments ? { comments } : {}),
+        const res = await fetch('/api/payment/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chargeId,
+            orderData: {
+              platform,
+              serviceType,
+              region,
+              quantity,
+              username: instagramUser,
+              postLink: instagramLink,
+              comments: comments || undefined,
+              orderBumps: added.map(b => ({ quantity: b.quantity })),
+            },
+          }),
         })
-        const res = await fetch(`/api/payment/check?${params.toString()}`)
         const data = await res.json()
         if (data.status === 'paid') {
           setPaymentConfirmed(true)
+          console.log('[Checkout] Pedido BulkFollows:', data.bulkOrderId, data.bulkError)
           setTimeout(() => router.push(`/status/${orderId}`), 2000)
         }
       } catch {
@@ -216,7 +220,7 @@ export default function CheckoutClient({
 
     const id = setInterval(poll, 5000)
     return () => clearInterval(id)
-  }, [phase, chargeId, orderId, quantity, instagramLink, categorySlug, finalBumpQty, paymentConfirmed, expired, isPreviewPayment, router])
+  }, [phase, chargeId, orderId, quantity, instagramLink, instagramUser, categorySlug, comments, added, paymentConfirmed, expired, isPreviewPayment, router])
 
   // ── Bump helpers
   const addOffer = (offer: BumpOffer) => {
@@ -245,7 +249,6 @@ export default function CheckoutClient({
 
     const { platform, serviceType, region } = parseCategory(categorySlug)
     const bumpQty = added.reduce((s, i) => s + i.quantity, 0)
-    setFinalBumpQty(bumpQty)
     setGenerating(true)
 
     try {

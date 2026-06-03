@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import Header from '@/components/Header'
 import CategorySection from '@/components/CategorySection'
 import CategoryCard from '@/components/CategoryCard'
@@ -19,23 +19,26 @@ export default function Home() {
   const servicesRef = useRef<HTMLElement>(null)
   const packagesRef = useRef<HTMLDivElement>(null)
 
-  const isPreview = process.env.NEXT_PUBLIC_PREVIEW_MODE === 'true'
   const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
 
   const [orderCount, setOrderCount] = useState(190432)
   const [orderPulse, setOrderPulse] = useState(false)
   const orderTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const orderPulseTimerRef = useRef<ReturnType<typeof setTimeout>>()
   useEffect(() => {
     const schedule = () => {
       orderTimerRef.current = setTimeout(() => {
         setOrderCount((c) => c + 1)
         setOrderPulse(true)
-        setTimeout(() => setOrderPulse(false), 400)
+        orderPulseTimerRef.current = setTimeout(() => setOrderPulse(false), 400)
         schedule()
       }, 20000 + Math.random() * 20000)
     }
     schedule()
-    return () => clearTimeout(orderTimerRef.current)
+    return () => {
+      clearTimeout(orderTimerRef.current)
+      clearTimeout(orderPulseTimerRef.current)
+    }
   }, [])
 
   // Listen for platform change events from header
@@ -53,22 +56,32 @@ export default function Home() {
     return () => window.removeEventListener('hypefy:platform', handler)
   }, [])
 
-  const currentCategories = platform === 'tiktok' ? tiktokSubCategories : instagramSubCategories
-  const currentPackages = getPackagesBySlug(activeSlug)
-  const activeCategory = currentCategories.find((c) => c.slug === activeSlug)
+  const currentCategories = useMemo(
+    () => platform === 'tiktok' ? tiktokSubCategories : instagramSubCategories,
+    [platform]
+  )
+  const categoryPackages = useMemo(
+    () => currentCategories.map((cat) => ({ slug: cat.slug, packages: getPackagesBySlug(cat.slug) })),
+    [currentCategories]
+  )
+  const currentPackages = useMemo(() => getPackagesBySlug(activeSlug), [activeSlug])
+  const activeCategory = useMemo(
+    () => currentCategories.find((c) => c.slug === activeSlug),
+    [currentCategories, activeSlug]
+  )
 
-  const handlePlatformSwitch = (p: 'instagram' | 'tiktok') => {
+  const handlePlatformSwitch = useCallback((p: 'instagram' | 'tiktok') => {
     setPlatform(p)
     const cats = p === 'tiktok' ? tiktokSubCategories : instagramSubCategories
     setActiveSlug(cats[0].slug)
-  }
+  }, [])
 
-  const handleCategoryCardClick = (slug: string) => {
+  const handleCategoryCardClick = useCallback((slug: string) => {
     setActiveSlug(slug)
     setTimeout(() => {
       packagesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
-  }
+  }, [])
 
   const isTikTok = platform === 'tiktok'
 
@@ -186,19 +199,16 @@ export default function Home() {
 
             {/* Category Cards — horizontal scroll on mobile, grid on desktop */}
             <div className="mb-10 -mx-4 px-4 flex gap-3 overflow-x-auto pb-3 no-scrollbar sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
-              {currentCategories.map((cat, i) => {
-                const pkgs = getPackagesBySlug(cat.slug)
-                return (
-                  <CategoryCard
-                    key={cat.slug}
-                    category={cat}
-                    packages={pkgs}
-                    featured={i === 0}
-                    active={activeSlug === cat.slug}
-                    onClick={() => handleCategoryCardClick(cat.slug)}
-                  />
-                )
-              })}
+              {currentCategories.map((cat, i) => (
+                <CategoryCard
+                  key={cat.slug}
+                  category={cat}
+                  packages={categoryPackages[i].packages}
+                  featured={i === 0}
+                  active={activeSlug === cat.slug}
+                  onClick={() => handleCategoryCardClick(cat.slug)}
+                />
+              ))}
             </div>
 
             {/* Sub-category tabs */}

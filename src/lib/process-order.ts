@@ -3,14 +3,14 @@ import { getServiceId } from './service-ids'
 
 export interface OrderPayload {
   orderId: string
-  platform: 'instagram' | 'tiktok'
-  serviceType: 'followers' | 'likes' | 'views' | 'stories' | 'comments'
-  region: 'global' | 'brazil'
+  platform: string
+  serviceType: string
+  region: string
   quantity: number
   instagramLink: string
   username: string
-  bumpQty?: number
   comments?: string
+  orderBumps?: Array<{ quantity: number }>
 }
 
 export async function processOrderAfterPayment(order: OrderPayload): Promise<{
@@ -34,6 +34,7 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
     console.log('Link:', order.instagramLink)
     console.log('Username:', order.username)
     console.log('Comments:', order.comments ? `SIM (${order.comments.split('\n').length} linhas)` : 'NÃO')
+    console.log('OrderBumps:', order.orderBumps?.length ?? 0)
     console.log('ServiceId encontrado:', serviceId)
 
     if (!serviceId) {
@@ -43,27 +44,37 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
     }
 
     const client = getBulkFollowsClient()
-    const result = await client.createOrder(serviceId, order.instagramLink, order.quantity, order.comments)
 
+    // Build the correct link for the main order
+    // For followers/stories the instagramLink is already the profile URL
+    // For likes/views/comments it is the post URL
+    const mainLink = order.instagramLink || (() => {
+      const user = order.username.replace(/^@/, '')
+      return order.platform === 'tiktok'
+        ? `https://www.tiktok.com/@${user}`
+        : `https://www.instagram.com/${user}/`
+    })()
+
+    const result = await client.createOrder(serviceId, mainLink, order.quantity, order.comments)
     console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 
-    // Process bump followers as separate order using the profile link (non-critical)
-    if (order.bumpQty && order.bumpQty > 0) {
-      try {
-        const bumpServiceId = getServiceId(order.platform, 'followers', 'global')
-        const rawUser = (order.username || '').replace(/^@/, '')
-        const bumpLink = order.platform === 'tiktok'
-          ? `https://www.tiktok.com/@${rawUser}`
-          : `https://www.instagram.com/${rawUser}/`
+    // Process order bumps (always on the profile link)
+    if (order.orderBumps && order.orderBumps.length > 0) {
+      const bumpServiceId = getServiceId(order.platform, 'followers', 'global')
+      const rawUser = order.username.replace(/^@/, '')
+      const bumpLink = order.platform === 'tiktok'
+        ? `https://www.tiktok.com/@${rawUser}`
+        : `https://www.instagram.com/${rawUser}/`
 
-        if (bumpServiceId && rawUser) {
-          await client.createOrder(bumpServiceId, bumpLink, order.bumpQty)
-          console.log(`[BulkFollows] ✅ Bump criado! qty:${order.bumpQty} link:${bumpLink}`)
-        } else {
-          console.warn(`[BulkFollows] Bump ignorado — bumpServiceId:${bumpServiceId} rawUser:"${rawUser}"`)
+      for (const bump of order.orderBumps) {
+        try {
+          if (bumpServiceId) {
+            await client.createOrder(bumpServiceId, bumpLink, bump.quantity)
+            console.log(`[BulkFollows] ✅ Bump criado! qty:${bump.quantity} link:${bumpLink}`)
+          }
+        } catch (bumpErr) {
+          console.error('[BulkFollows] Erro no bump (não crítico):', bumpErr)
         }
-      } catch (bumpErr) {
-        console.error('[BulkFollows] Erro no bump (não crítico):', bumpErr)
       }
     }
 
