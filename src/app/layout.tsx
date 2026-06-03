@@ -21,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
-      <body className="min-h-screen bg-[#0a0a0f] text-white antialiased">
+      <body className="min-h-screen bg-[#0a0a0f] text-white antialiased" suppressHydrationWarning>
         {children}
 
         {/* Social proof popup — hidden on checkout/status pages internally */}

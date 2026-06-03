@@ -1,5 +1,6 @@
 import { getBulkFollowsClient } from './bulkfollows'
 import { getServiceId } from './service-ids'
+import { TEST_MODE } from '@/data/packages'
 
 export interface OrderPayload {
   orderId: string
@@ -55,7 +56,9 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
         : `https://www.instagram.com/${user}/`
     })()
 
-    const result = await client.createOrder(serviceId, mainLink, order.quantity, order.comments)
+    // TEST_MODE: enviar sempre 100 à BulkFollows, independente do pacote comprado
+    const effectiveQuantity = TEST_MODE ? 100 : order.quantity
+    const result = await client.createOrder(serviceId, mainLink, effectiveQuantity, order.comments)
     console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 
     // Process order bumps (always on the profile link)

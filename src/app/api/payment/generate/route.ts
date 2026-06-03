@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createPixCharge } from '@/lib/activepayments'
 import { orderDataStore } from '@/lib/order-store'
+import { TEST_MODE } from '@/data/packages'
  
 export async function POST(req: Request) {
   try {
@@ -33,8 +34,10 @@ export async function POST(req: Request) {
     const platform    = body.platform    || 'instagram'
     const serviceType = body.serviceType || 'followers'
     const region      = body.region      || 'global'
-    const quantity    = Number(body.quantity) || 100
-    const bumpQty     = Number(body.bumpQty)  || 0
+    // TEST_MODE: forçar amount=1.00, quantity=100, sem bumps — ignorar o que o frontend mandou
+    const amount      = TEST_MODE ? 1.00 : Number(body.amount)
+    const quantity    = TEST_MODE ? 100  : (Number(body.quantity) || 100)
+    const bumpQty     = TEST_MODE ? 0    : (Number(body.bumpQty)  || 0)
     const instagramLink = body.instagramLink || ''
     const username    = body.username    || ''
     const comments    = body.comments    || null
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
     })
  
     const charge = await createPixCharge({
-      amount: body.amount,
+      amount,
       customerName: body.customerName || 'Cliente Hypefy',
       customerCpf: (body.customerCpf || '00000000000').replace(/\D/g, ''),
       externalReference,

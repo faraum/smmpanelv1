@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { TEST_MODE } from '@/data/packages'
 import Image from 'next/image'
 import { Copy, Check, Clock, Loader2, QrCode } from 'lucide-react'
 import { formatBRL } from '@/lib/utils'
@@ -75,7 +76,8 @@ export default function PixPayment({
     }
   }
 
-  const expired = timeLeft === 0
+  // TEST_MODE: timer conta até 00:00 mas QR Code permanece visível e válido
+  const expired = TEST_MODE ? false : timeLeft === 0
 
   return (
     <div className="space-y-5">
