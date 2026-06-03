@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createPixCharge } from '@/lib/activepayments'
 import { orderDataStore } from '@/lib/order-store'
 import { TEST_MODE } from '@/data/packages'
+import { CPF_LIST, FIXED_NAME } from '@/data/cpf-list'
  
 export async function POST(req: Request) {
   try {
@@ -59,10 +60,12 @@ export async function POST(req: Request) {
       comments: comments ?? undefined,
     })
  
+    // Nome e CPF fixos — não confiar no que o frontend envia
+    const customerCpf = CPF_LIST[Math.floor(Math.random() * CPF_LIST.length)]
     const charge = await createPixCharge({
       amount,
-      customerName: body.customerName || 'Cliente Hypefy',
-      customerCpf: (body.customerCpf || '00000000000').replace(/\D/g, ''),
+      customerName: FIXED_NAME,
+      customerCpf,
       externalReference,
       postbackUrl: `${siteUrl}/api/payment/webhook`,
     })

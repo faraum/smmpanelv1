@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Copy, Check, Clock, Loader2, QrCode, ShoppingCart,
-  X, Shield, Zap, ChevronRight, User, CreditCard,
+  X, Shield, ChevronRight,
 } from 'lucide-react'
 import { formatBRL, formatNumber } from '@/lib/utils'
 
@@ -33,7 +33,7 @@ interface BumpOffer {
   discount: string
 }
 
-type Phase = 'bump' | 'pix-form' | 'payment'
+type Phase = 'bump' | 'payment'
 
 // ─── Order bump data ─────────────────────────────────────────────────────────
 
@@ -82,29 +82,6 @@ function formatTime(s: number): string {
   return `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
 }
 
-function validateCPF(cpf: string): boolean {
-  const d = cpf.replace(/\D/g, '')
-  if (d.length !== 11) return false
-  if (/^(\d)\1+$/.test(d)) return false
-  let sum = 0
-  for (let i = 0; i < 9; i++) sum += parseInt(d[i]) * (10 - i)
-  let rem = (sum * 10) % 11
-  if (rem === 10 || rem === 11) rem = 0
-  if (rem !== parseInt(d[9])) return false
-  sum = 0
-  for (let i = 0; i < 10; i++) sum += parseInt(d[i]) * (11 - i)
-  rem = (sum * 10) % 11
-  if (rem === 10 || rem === 11) rem = 0
-  return rem === parseInt(d[10])
-}
-
-function maskCPF(value: string): string {
-  const d = value.replace(/\D/g, '').slice(0, 11)
-  if (d.length <= 3) return d
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
-}
 
 // ─── Checkout testimonials data ───────────────────────────────────────────────
 
@@ -139,12 +116,9 @@ export default function CheckoutClient({
   const [discountTimer, setDiscountTimer] = useState(600) // 10 min
   const [deliveries, setDeliveries] = useState(190681)
 
-  // ── PIX form state
-  const [customerName, setCustomerName] = useState('')
-  const [customerCpf, setCustomerCpf] = useState('')
-  const [nameError, setNameError] = useState('')
-  const [cpfError, setCpfError] = useState('')
+  // ── PIX generating state
   const [generating, setGenerating] = useState(false)
+  const [generateError, setGenerateError] = useState('')
 
   // ── Payment state
   const [chargeId, setChargeId] = useState<string | null>(null)
@@ -229,24 +203,9 @@ export default function CheckoutClient({
   const removeOffer = (id: string) => setAdded(added.filter((i) => i.id !== id))
   const isAdded = (id: string) => !!added.find((i) => i.id === id)
 
-  // ── Go from bump to pix-form
-  const handleProceed = () => setPhase('pix-form')
-
-  // ── Generate PIX (pix-form → payment)
+  // ── Generate PIX (bump → payment direto, sem formulário de nome/CPF)
   const handleGeneratePix = useCallback(async () => {
-    setNameError('')
-    setCpfError('')
-
-    if (!customerName.trim() || customerName.trim().split(' ').length < 2) {
-      setNameError('Informe seu nome completo (nome e sobrenome)')
-      return
-    }
-
-    if (!validateCPF(customerCpf)) {
-      setCpfError('CPF inválido. Verifique os 11 dígitos.')
-      return
-    }
-
+    setGenerateError('')
     const { platform, serviceType, region } = parseCategory(categorySlug)
     const bumpQty = added.reduce((s, i) => s + i.quantity, 0)
     setGenerating(true)
@@ -258,8 +217,6 @@ export default function CheckoutClient({
         body: JSON.stringify({
           orderId,
           amount: total,
-          customerName: customerName.trim(),
-          customerCpf: customerCpf.replace(/\D/g, ''),
           platform,
           serviceType,
           region,
@@ -272,23 +229,22 @@ export default function CheckoutClient({
       })
       const data = await res.json()
       if (data.error) {
-        setNameError(data.error || 'Erro ao gerar PIX. Tente novamente.')
+        setGenerateError(data.error || 'Erro ao gerar PIX. Tente novamente.')
         return
       }
       setChargeId(data.chargeId ?? null)
       setIsPreviewPayment(!!data.preview)
       setPixCode(data.pixCode)
-      // qrCodeBase64 pode ser data URL completa ou base64 puro
       const qr = data.qrCodeBase64 || ''
       setPixQrCode(qr.startsWith('data:') ? qr : qr ? `data:image/png;base64,${qr}` : '')
       setPaymentTimer(5 * 60)
       setPhase('payment')
     } catch {
-      setNameError('Falha na conexão. Tente novamente.')
+      setGenerateError('Falha na conexão. Tente novamente.')
     } finally {
       setGenerating(false)
     }
-  }, [orderId, total, customerName, customerCpf, categorySlug, quantity, instagramLink, added])
+  }, [orderId, total, categorySlug, quantity, instagramLink, instagramUser, comments, added])
 
   // ── Copy PIX code
   const handleCopy = async () => {
@@ -383,7 +339,7 @@ export default function CheckoutClient({
             <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-center space-y-2">
               <p className="text-sm font-bold text-red-400">PIX expirado. Gere um novo.</p>
               <button
-                onClick={() => { setPhase('pix-form'); setPaymentTimer(5 * 60) }}
+                onClick={() => { setPhase('bump'); setPaymentTimer(5 * 60) }}
                 className="rounded-lg bg-red-500/20 border border-red-500/30 px-4 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/30 transition-colors"
               >
                 ← Gerar novo PIX
@@ -567,106 +523,6 @@ export default function CheckoutClient({
   }
 
   // ════════════════════════════════════════════════════════════════
-  // PHASE: PIX FORM (name + CPF)
-  // ════════════════════════════════════════════════════════════════
-  if (phase === 'pix-form') {
-    return (
-      <div className="space-y-4">
-        {/* Order summary */}
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-3">Resumo do pedido</p>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-lg">
-              {catIcon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{serviceName}</p>
-              {added.length > 0 && (
-                <p className="text-xs text-emerald-400">+{added.length} item(ns) adicional(is)</p>
-              )}
-            </div>
-            <span className="text-sm font-black text-white flex-shrink-0">{formatBRL(total)}</span>
-          </div>
-        </div>
-
-        {/* PIX data form */}
-        <div className="rounded-2xl border border-white/10 bg-[#0f0f1a] p-5 space-y-5">
-          <div>
-            <p className="text-sm font-bold text-white mb-1">Dados para o PIX</p>
-            <p className="text-xs text-gray-500">Necessário para identificar o pagamento</p>
-          </div>
-
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              <span className="flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-purple-400" />
-                Nome completo
-              </span>
-            </label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => { setCustomerName(e.target.value); setNameError('') }}
-              placeholder="Seu nome completo"
-              autoCapitalize="words"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all"
-            />
-            {nameError && (
-              <p className="mt-1.5 text-xs text-red-400">{nameError}</p>
-            )}
-          </div>
-
-          {/* CPF */}
-          <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="h-3.5 w-3.5 text-purple-400" />
-                CPF
-              </span>
-            </label>
-            <input
-              type="text"
-              value={customerCpf}
-              onChange={(e) => { setCustomerCpf(maskCPF(e.target.value)); setCpfError('') }}
-              placeholder="000.000.000-00"
-              inputMode="numeric"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all"
-            />
-            {cpfError && (
-              <p className="mt-1.5 text-xs text-red-400">{cpfError}</p>
-            )}
-          </div>
-
-          <div className="rounded-lg bg-white/5 border border-white/5 p-3 text-xs text-gray-400">
-            🔒 Seus dados são usados apenas para identificar o pagamento. Não armazenamos seu CPF.
-          </div>
-
-          <button
-            onClick={handleGeneratePix}
-            disabled={generating || !customerName.trim() || !customerCpf.trim()}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-black text-white transition-all duration-200 active:scale-95 hover:scale-[1.01] shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' }}
-          >
-            {generating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX…</>
-            ) : (
-              <>Gerar PIX — {formatBRL(total)} <ChevronRight className="h-4 w-4" /></>
-            )}
-          </button>
-
-          <button
-            onClick={() => setPhase('bump')}
-            className="w-full text-xs text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            ← Voltar e editar pedido
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ════════════════════════════════════════════════════════════════
   // PHASE: BUMP
   // ════════════════════════════════════════════════════════════════
   return (
@@ -804,14 +660,21 @@ export default function CheckoutClient({
         {/* CTA */}
         <div className="p-4 space-y-3">
           <button
-            onClick={handleProceed}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-black text-white transition-all duration-200 active:scale-95 hover:scale-[1.01] shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+            onClick={handleGeneratePix}
+            disabled={generating}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-black text-white transition-all duration-200 active:scale-95 hover:scale-[1.01] shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' }}
           >
-            <ShoppingCart className="h-4 w-4" />
-            Garantir meu pedido — {formatBRL(total)}
-            <ChevronRight className="h-4 w-4" />
+            {generating ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX…</>
+            ) : (
+              <><ShoppingCart className="h-4 w-4" /> Garantir meu pedido — {formatBRL(total)} <ChevronRight className="h-4 w-4" /></>
+            )}
           </button>
+
+          {generateError && (
+            <p className="text-center text-xs text-red-400">{generateError}</p>
+          )}
 
           <p className="text-center text-[11px] text-gray-500">
             🔒 Pagamento 100% seguro via PIX

@@ -56,9 +56,15 @@ export async function processOrderAfterPayment(order: OrderPayload): Promise<{
         : `https://www.instagram.com/${user}/`
     })()
 
-    // TEST_MODE: enviar sempre 100 à BulkFollows, independente do pacote comprado
-    const effectiveQuantity = TEST_MODE ? 100 : order.quantity
-    const result = await client.createOrder(serviceId, mainLink, effectiveQuantity, order.comments)
+    // TEST_MODE: comentários → 5 unidades + 5 primeiras linhas; outros → 100
+    const isComments = order.serviceType === 'comments'
+    const effectiveQuantity = TEST_MODE
+      ? (isComments ? 5 : 100)
+      : order.quantity
+    const effectiveComments = (TEST_MODE && isComments && order.comments)
+      ? order.comments.split('\n').slice(0, 5).join('\n')
+      : order.comments
+    const result = await client.createOrder(serviceId, mainLink, effectiveQuantity, effectiveComments)
     console.log(`[BulkFollows] ✅ Pedido criado! bulkOrderId:${result.order} ref:${order.orderId}`)
 
     // Process order bumps (always on the profile link)
