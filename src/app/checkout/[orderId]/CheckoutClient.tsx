@@ -47,11 +47,10 @@ function getCategoryKey(slug: string): string {
   if (slug.startsWith('seguidores')) return 'seguidores'
   if (slug.startsWith('curtidas'))   return 'curtidas'
   if (slug.startsWith('visualizacoes')) return 'visualizacoes'
-  if (slug.startsWith('comentarios'))  return 'comentarios'
   return 'outros'
 }
 
-type ServiceType = 'followers' | 'likes' | 'views' | 'stories' | 'comments'
+type ServiceType = 'followers' | 'likes' | 'views' | 'viewsReels' | 'viewsStories'
 type Region = 'global' | 'brazil'
 
 function parseCategory(slug: string): {
@@ -64,10 +63,8 @@ function parseCategory(slug: string): {
     'seguidores-brasileiros':  { platform: 'instagram', serviceType: 'followers', region: 'brazil' },
     'curtidas-mundiais':       { platform: 'instagram', serviceType: 'likes',     region: 'global' },
     'curtidas-brasileiras':    { platform: 'instagram', serviceType: 'likes',     region: 'brazil' },
-    'visualizacoes-reels':     { platform: 'instagram', serviceType: 'views',     region: 'global' },
-    'views-stories':           { platform: 'instagram', serviceType: 'stories',   region: 'global' },
-    'comentarios-brasileiros': { platform: 'instagram', serviceType: 'comments',  region: 'brazil' },
-    'comentarios-mundiais':    { platform: 'instagram', serviceType: 'comments',  region: 'global' },
+    'visualizacoes-reels':     { platform: 'instagram', serviceType: 'viewsReels',   region: 'global' },
+    'views-stories':           { platform: 'instagram', serviceType: 'viewsStories', region: 'global' },
     'tiktok-seguidores-global': { platform: 'tiktok', serviceType: 'followers', region: 'global' },
     'tiktok-seguidores-br':     { platform: 'tiktok', serviceType: 'followers', region: 'brazil' },
     'tiktok-curtidas-global':   { platform: 'tiktok', serviceType: 'likes',     region: 'global' },
@@ -286,7 +283,7 @@ export default function CheckoutClient({
   const catIcon = purchasedCat === 'seguidores' ? '👥'
     : purchasedCat === 'curtidas' ? '❤️'
     : purchasedCat === 'visualizacoes' ? '▶️'
-    : purchasedCat === 'comentarios' ? '💬' : '⭐'
+    : '⭐'
 
   // ════════════════════════════════════════════════════════════════
   // PHASE: PAYMENT CONFIRMED

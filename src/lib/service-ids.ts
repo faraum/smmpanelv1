@@ -3,10 +3,10 @@
 
 export const BULK_SERVICE_IDS: Record<string, Record<string, Record<string, number>>> = {
   instagram: {
-    followers: { global: 14805, brazil: 8695 },
-    likes:     { global: 3319,  brazil: 14388 },
-    views:     { global: 4494,  brazil: 4494 },
-    comments:  { global: 476,   brazil: 8701 },
+    followers:   { global: 14805, brazil: 8695 },
+    likes:       { global: 3319,  brazil: 14388 },
+    viewsReels:  { global: 237,   brazil: 237 },
+    viewsStories:{ global: 454,   brazil: 454 },
   },
   tiktok: {
     followers: { global: 13764, brazil: 13090 },

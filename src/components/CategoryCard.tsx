@@ -18,7 +18,6 @@ const CATEGORY_FEATURES: Record<string, string[]> = {
   'curtidas-brasileiras':      ['Curtidas de BR reais', 'Mais engajamento', 'Entrega rápida'],
   'visualizacoes-reels':       ['Boost no algoritmo', 'Views reais', 'Entrega rápida'],
   'views-stories':             ['Aumento de alcance', 'Entrega rápida', 'Sem senha'],
-  'comentarios-brasileiros':   ['Comentários em PT', 'Perfis reais BR', 'Personalizado'],
   'tiktok-seguidores-global':  ['Entrega em até 1h', 'Alta retenção', 'Sem senha'],
   'tiktok-seguidores-br':      ['Perfis BR reais', 'Engajamento qualificado', 'Alta retenção'],
   'tiktok-curtidas-global':    ['Entrega imediata', 'Qualidade premium', 'Sem senha'],

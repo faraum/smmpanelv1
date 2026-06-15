@@ -14,7 +14,6 @@ function getTypeIcon(slug: string): string {
   if (slug.startsWith('seguidores')) return '👥'
   if (slug.startsWith('curtidas')) return '❤️'
   if (slug.startsWith('visualizacoes')) return '▶️'
-  if (slug.startsWith('comentarios')) return '💬'
   return '⭐'
 }
 

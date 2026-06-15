@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isPreviewMode, makePreviewOrderId } from '@/lib/config'
 import { getPackageById } from '@/data/packages'
+import { cleanInstagramPost, cleanTikTokVideo, cleanProfile } from '@/lib/clean-links'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,16 +25,20 @@ export async function POST(req: NextRequest) {
     const instagramUser = `@${rawUser}`
 
     // Build the link that goes to BulkFollows:
-    // - For post types (likes/views/comments): use the postLink provided
+    // - For post types (likes/views): clean & normalize the postLink
     // - For profile types (followers/stories): build from username
     const platform = pkg.platform ?? 'instagram'
     let instagramLink: string
     if (pkg.inputType === 'post' && postLink?.trim()) {
-      instagramLink = postLink.trim()
+      const cleaned = platform === 'tiktok'
+        ? cleanTikTokVideo(postLink.trim())
+        : cleanInstagramPost(postLink.trim())
+      if (!cleaned) {
+        return NextResponse.json({ success: false, error: 'Link inválido. Cole o link direto do post.' }, { status: 400 })
+      }
+      instagramLink = cleaned
     } else {
-      instagramLink = platform === 'tiktok'
-        ? `https://www.tiktok.com/@${rawUser}`
-        : `https://www.instagram.com/${rawUser}/`
+      instagramLink = cleanProfile(rawUser, platform)
     }
 
     // ── MODO PREVIEW ─────────────────────────────────────────────────────────

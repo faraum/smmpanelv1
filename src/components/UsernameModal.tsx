@@ -15,7 +15,6 @@ function getTypeIcon(slug: string): string {
   if (slug.includes('seguidores')) return '👥'
   if (slug.includes('curtidas')) return '❤️'
   if (slug.includes('visualizacoes') || slug.includes('views')) return '▶️'
-  if (slug.includes('comentarios')) return '💬'
   if (slug.includes('stories')) return '👁️'
   return '⭐'
 }
@@ -198,7 +197,7 @@ export default function UsernameModal({ pkg, onClose }: UsernameModalProps) {
             />
           </div>
 
-          {/* Post link (likes, views, comments) */}
+          {/* Post link (likes, views) */}
           {isPost && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
