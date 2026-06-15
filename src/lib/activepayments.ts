@@ -32,7 +32,7 @@ export async function createPixCharge(params: {
       customerCpf: params.customerCpf.replace(/\D/g, ''),
       expirationMinutes: 5,
       externalReference: params.externalReference || '',
-      additionalInfo: 'Hypefy - Compra de serviço digital',
+      additionalInfo: 'Engajafy - Compra de serviço digital',
       postbackUrl: params.postbackUrl || '',
     }),
   })

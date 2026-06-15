@@ -32,4 +32,4 @@ export const CPF_LIST = [
   "09441383570","17159186737"
 ]
 
-export const FIXED_NAME = "Hypefy Seguidores e Curtidas"
+export const FIXED_NAME = "Engajafy Seguidores e Curtidas"

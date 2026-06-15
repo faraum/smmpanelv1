@@ -12,7 +12,7 @@ export default function Header() {
 
   const handlePlatformNav = (platform: 'instagram' | 'tiktok') => {
     setMenuOpen(false)
-    window.dispatchEvent(new CustomEvent('hypefy:platform', { detail: platform }))
+    window.dispatchEvent(new CustomEvent('engajafy:platform', { detail: platform }))
     if (pathname !== '/') {
       router.push('/')
     }
@@ -31,7 +31,7 @@ export default function Header() {
               <Zap className="h-4 w-4 text-white" />
             </div>
             <span style={{ fontSize: '20px', fontWeight: 600, letterSpacing: '-0.5px' }}>
-              <span style={{ color: '#8B5CF6' }}>Hype</span>
+              <span style={{ color: '#8B5CF6' }}>Engaja</span>
               <span style={{ color: '#ffffff' }}>fy</span>
             </span>
           </Link>

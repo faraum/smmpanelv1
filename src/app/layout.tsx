@@ -5,13 +5,13 @@ import SocialProofPopup from '@/components/SocialProofPopup'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
-const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
+const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Engajafy'
 
 export const metadata: Metadata = {
-  title: 'Hypefy — Comprar Seguidores e Curtidas Instagram',
+  title: 'Engajafy — Comprar Seguidores e Curtidas Instagram',
   description:
-    'Compre seguidores, curtidas, visualizações e comentários para Instagram. Entrega rápida e automática. Pagamento via PIX. Crie o hype que você merece!',
-  keywords: 'comprar seguidores instagram, comprar curtidas, seguidores brasileiros, curtidas brasileiras, visualizações reels, hypefy',
+    'Compre seguidores, curtidas e visualizações para Instagram. Entrega rápida e automática. Pagamento via PIX. Engaje seu perfil com segurança!',
+  keywords: 'comprar seguidores instagram, comprar curtidas, seguidores brasileiros, curtidas brasileiras, visualizações reels, engajafy',
 }
 
 export default function RootLayout({

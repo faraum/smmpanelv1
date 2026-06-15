@@ -19,7 +19,7 @@ export default function Home() {
   const servicesRef = useRef<HTMLElement>(null)
   const packagesRef = useRef<HTMLDivElement>(null)
 
-  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Hypefy'
+  const siteName = process.env.NEXT_PUBLIC_SITE_NAME || 'Engajafy'
 
   const [orderCount, setOrderCount] = useState(190432)
   const [orderPulse, setOrderPulse] = useState(false)
@@ -52,8 +52,8 @@ export default function Home() {
         servicesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 100)
     }
-    window.addEventListener('hypefy:platform', handler)
-    return () => window.removeEventListener('hypefy:platform', handler)
+    window.addEventListener('engajafy:platform', handler)
+    return () => window.removeEventListener('engajafy:platform', handler)
   }, [])
 
   const currentCategories = useMemo(
@@ -253,7 +253,7 @@ export default function Home() {
         <section className="border-t border-white/5 py-16 px-4">
           <div className="mx-auto max-w-6xl">
             <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold text-white">Por que escolher o {siteName}?</h2>
+              <h2 className="text-2xl font-bold text-white">Por que escolher a {siteName}?</h2>
               <p className="text-gray-400 text-sm mt-2">Qualidade garantida em cada pedido</p>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -291,12 +291,12 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <Zap className="h-4 w-4 text-purple-400" />
               <span style={{ fontSize: '16px', fontWeight: 600, letterSpacing: '-0.5px' }}>
-                <span style={{ color: '#8B5CF6' }}>Hype</span>
+                <span style={{ color: '#8B5CF6' }}>Engaja</span>
                 <span style={{ color: '#ffffff' }}>fy</span>
               </span>
             </div>
             <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span>© 2025 Hypefy. Todos os direitos reservados.</span>
+              <span>© 2025 Engajafy. Todos os direitos reservados.</span>
               {process.env.NEXT_PUBLIC_WHATSAPP && (
                 <>
                   <span>·</span>

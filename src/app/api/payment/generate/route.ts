@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
  
     // ── MODO PRODUÇÃO ─────────────────────────────────────────────────────────
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hypefy.netlify.app'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://engajafy.netlify.app'
  
     const orderId     = body.orderId     || 'ord-' + Date.now()
     const platform    = body.platform    || 'instagram'
